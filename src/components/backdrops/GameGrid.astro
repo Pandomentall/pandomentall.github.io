@@ -1,0 +1,105 @@
+---
+// Game-zone universe: an arcade night. Star field, a flat neon line grid fading down the
+// page, a gold/purple horizon and a perspective floor grid slowly running toward the
+// viewer. Pure CSS. Reduced motion: stars and floor stand still.
+---
+
+<div class="backdrop ggrid" aria-hidden="true">
+  <div class="ggrid__stars"></div>
+  <div class="ggrid__stars ggrid__stars--far"></div>
+  <div class="ggrid__flat"></div>
+  <div class="ggrid__horizon"></div>
+  <div class="ggrid__floor-wrap"><div class="ggrid__floor"></div></div>
+</div>
+
+<style>
+  .ggrid {
+    background: radial-gradient(ellipse 90% 60% at 50% 100%, rgb(185 162 245 / 0.1), transparent 70%);
+  }
+  .ggrid__stars {
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(1.2px 1.2px at 8% 12%, #e8e4dc, transparent),
+      radial-gradient(1px 1px at 23% 38%, #b9a2f5, transparent),
+      radial-gradient(1.4px 1.4px at 41% 9%, #e8e4dc, transparent),
+      radial-gradient(1px 1px at 57% 27%, #f2c572, transparent),
+      radial-gradient(1.2px 1.2px at 72% 14%, #e8e4dc, transparent),
+      radial-gradient(1px 1px at 86% 33%, #b9a2f5, transparent),
+      radial-gradient(1px 1px at 94% 6%, #e8e4dc, transparent),
+      radial-gradient(1.2px 1.2px at 33% 52%, #e8e4dc, transparent);
+    background-size: 520px 520px;
+    opacity: 0.7;
+    mask-image: linear-gradient(to bottom, #000 40%, transparent 70%);
+  }
+  .ggrid__stars--far {
+    background-size: 330px 330px;
+    background-position: 90px 60px;
+    opacity: 0.35;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .ggrid__stars {
+      animation: twinkle-field 4s ease-in-out infinite alternate;
+    }
+    .ggrid__stars--far {
+      animation-duration: 6.5s;
+    }
+  }
+  @keyframes twinkle-field {
+    to {
+      opacity: 0.25;
+    }
+  }
+  .ggrid__flat {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(to right, rgb(185 162 245 / 0.06) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(185 162 245 / 0.06) 1px, transparent 1px);
+    background-size: 64px 64px;
+    background-position: center top;
+    mask-image: linear-gradient(to bottom, #000 0%, rgb(0 0 0 / 0.6) 45%, transparent 70%);
+  }
+  .ggrid__horizon {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 34vh;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgb(242 197 114 / 0.35), rgb(185 162 245 / 0.35), transparent);
+    box-shadow: 0 0 40px 12px rgb(185 162 245 / 0.07);
+  }
+  .ggrid__floor-wrap {
+    position: absolute;
+    left: -50%;
+    right: -50%;
+    bottom: 0;
+    height: 34vh;
+    perspective: 320px;
+    perspective-origin: 50% 0%;
+    overflow: hidden;
+  }
+  .ggrid__floor {
+    position: absolute;
+    inset: 0 0 -60%;
+    transform: rotateX(62deg);
+    transform-origin: 50% 0%;
+    background-image:
+      linear-gradient(to right, rgb(185 162 245 / 0.18) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(242 197 114 / 0.14) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: linear-gradient(to bottom, transparent 0%, #000 30%);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .ggrid__floor {
+      animation: floor-run 3.2s linear infinite;
+    }
+  }
+  @keyframes floor-run {
+    to {
+      background-position:
+        0 56px,
+        0 56px;
+    }
+  }
+</style>

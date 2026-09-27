@@ -1,0 +1,71 @@
+---
+// Game zone list: wide row cards (WorkRow) in each game's own colours and hover effect.
+import Base from '../layouts/Base.astro';
+import WorkRow from './WorkRow.astro';
+import { listWorks, slugOf } from '../lib/works';
+import { pathFor, t, type Lang } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const games = await listWorks('games', lang);
+---
+
+<Base lang={lang} route="games" zone="game" title={`${t(lang, 'games.title')} — Ender Aygün`} description={t(lang, 'games.lead')}>
+  <div class="container container--wide games">
+    <header class="hud">
+      <p class="hud__kicker">{t(lang, 'games.kicker')}</p>
+      <h1>{t(lang, 'games.title')}</h1>
+      <p class="hud__lead">{t(lang, 'games.lead')}</p>
+    </header>
+
+    <ul class="rows">
+      {
+        games.map((g, i) => (
+          <li>
+            <WorkRow item={g} index={i} href={pathFor('games', lang, slugOf(g))} lang={lang} />
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</Base>
+
+<style>
+  .games {
+    padding-top: 4rem;
+  }
+  .hud__kicker {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+  .hud h1 {
+    margin: 0.4rem 0 0.9rem;
+    font-family: var(--font-display);
+    font-size: clamp(2.6rem, 9vw, 4.2rem);
+    font-weight: 700;
+    text-transform: uppercase;
+    line-height: 0.95;
+    background: linear-gradient(100deg, var(--text) 30%, var(--gold) 75%, var(--purple));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .hud__lead {
+    max-width: 38rem;
+    color: var(--muted);
+  }
+
+  .rows {
+    display: grid;
+    gap: 1rem;
+    margin: 2.75rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+</style>

@@ -1,0 +1,9 @@
+---
+import WorkDetail from '../../components/WorkDetail.astro';
+import { workPaths } from '../../lib/works';
+
+export const getStaticPaths = () => workPaths('games', 'tr');
+const { entry, prev, next } = Astro.props;
+---
+
+<WorkDetail kind="games" lang="tr" entry={entry} prev={prev} next={next} />

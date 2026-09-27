@@ -1,0 +1,83 @@
+---
+// Tech-zone universe ("workbench"): a calm, lit desk rather than a night sky.
+// Dot grid, two soft aurora lights (light blue + sage) drifting very slowly, and a
+// measuring ruler along the left edge on wide screens. Pure CSS; lights stand still
+// for reduced motion.
+---
+
+<div class="backdrop bench" aria-hidden="true">
+  <div class="bench__light bench__light--a"></div>
+  <div class="bench__light bench__light--b"></div>
+  <div class="bench__dots"></div>
+  <div class="bench__ruler"></div>
+</div>
+
+<style>
+  .bench__dots {
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(rgb(140 200 236 / 0.16) 1px, transparent 1.2px);
+    background-size: 22px 22px;
+    background-position: center top;
+    mask-image: linear-gradient(to bottom, #000 0%, rgb(0 0 0 / 0.5) 60%, rgb(0 0 0 / 0.25) 100%);
+  }
+  .bench__light {
+    position: absolute;
+    width: 70vmax;
+    height: 70vmax;
+    border-radius: 50%;
+  }
+  .bench__light--a {
+    top: -38vmax;
+    left: -12vmax;
+    background: radial-gradient(circle, rgb(140 200 236 / 0.2), transparent 62%);
+  }
+  .bench__light--b {
+    top: -20vmax;
+    right: -30vmax;
+    background: radial-gradient(circle, rgb(168 207 174 / 0.14), transparent 62%);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .bench__light--a {
+      animation: drift-a 38s ease-in-out infinite alternate;
+    }
+    .bench__light--b {
+      animation: drift-b 46s ease-in-out infinite alternate;
+    }
+  }
+  @keyframes drift-a {
+    to {
+      transform: translate(14vmax, 8vmax);
+    }
+  }
+  @keyframes drift-b {
+    to {
+      transform: translate(-12vmax, 12vmax);
+    }
+  }
+
+  .bench__ruler {
+    display: none;
+    position: absolute;
+    top: var(--header-h);
+    bottom: 0;
+    left: 0;
+    width: 18px;
+    border-right: 1px solid rgb(140 200 236 / 0.14);
+    background-image:
+      linear-gradient(to bottom, rgb(140 200 236 / 0.28) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(140 200 236 / 0.14) 1px, transparent 1px);
+    background-size:
+      18px 80px,
+      8px 16px;
+    background-repeat: repeat-y;
+    background-position:
+      0 0,
+      10px 0;
+  }
+  @media (min-width: 1100px) {
+    .bench__ruler {
+      display: block;
+    }
+  }
+</style>

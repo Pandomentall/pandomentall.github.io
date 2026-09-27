@@ -1,0 +1,95 @@
+---
+import { emailParts } from '../data/site';
+import { t, type Lang } from '../i18n/ui';
+import MailIcon from '@tabler/icons/outline/mail.svg';
+import CopyIcon from '@tabler/icons/outline/copy.svg';
+
+interface Props {
+  lang: Lang;
+  copyButton?: boolean;
+}
+const { lang, copyButton = false } = Astro.props;
+
+// Parts are reversed in the markup; the script below rebuilds the address.
+// No-JS readers see the human-readable "[at]" fallback.
+const rev = (s: string) => [...s].reverse().join('');
+const fallback = `${emailParts.user} [at] ${emailParts.domain}.${emailParts.tld}`;
+---
+
+<span class="email">
+  <MailIcon class="icon" aria-hidden="true" />
+  <a
+    class="email__link"
+    data-u={rev(emailParts.user)}
+    data-d={rev(emailParts.domain)}
+    data-t={rev(emailParts.tld)}>{fallback}</a
+  >
+  {
+    copyButton && (
+      <button
+        class="email__copy"
+        type="button"
+        hidden
+        data-label={t(lang, 'cv.copyEmail')}
+        data-done={t(lang, 'cv.copied')}
+      >
+        <CopyIcon class="icon" aria-hidden="true" />
+        <span>{t(lang, 'cv.copyEmail')}</span>
+      </button>
+    )
+  }
+</span>
+
+<script>
+  const rev = (s: string) => [...s].reverse().join('');
+  for (const a of document.querySelectorAll<HTMLAnchorElement>('.email__link')) {
+    const { u = '', d = '', t = '' } = a.dataset;
+    const address = `${rev(u)}@${rev(d)}.${rev(t)}`;
+    a.href = `mailto:${address}`;
+    a.textContent = address;
+
+    const copy = a.parentElement?.querySelector<HTMLButtonElement>('.email__copy');
+    if (!copy || !navigator.clipboard) continue;
+    copy.hidden = false;
+    const label = copy.querySelector('span')!;
+    copy.addEventListener('click', async () => {
+      await navigator.clipboard.writeText(address);
+      label.textContent = copy.dataset.done ?? '';
+      setTimeout(() => (label.textContent = copy.dataset.label ?? ''), 1600);
+    });
+  }
+</script>
+
+<style>
+  .email {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+  .email__copy {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.1rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--muted);
+    font: inherit;
+    font-size: 0.78rem;
+    cursor: pointer;
+  }
+  .email__copy:hover {
+    color: var(--text);
+    border-color: var(--muted);
+  }
+  .email__copy[hidden] {
+    display: none;
+  }
+  @media print {
+    .email__copy {
+      display: none;
+    }
+  }
+</style>

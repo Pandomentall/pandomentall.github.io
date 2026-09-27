@@ -1,0 +1,79 @@
+---
+// GitHub Pages serves this for every unknown path. Language is unknown, so both are shown.
+import Base from '../layouts/Base.astro';
+import { t } from '../i18n/ui';
+---
+
+<Base lang="tr" zone="game" title="404 — Ender Aygün" description={t('tr', '404.body')} noindex>
+  <div class="container lost">
+    <canvas class="lost__bug" width="170" height="90" aria-hidden="true"></canvas>
+    <p class="lost__code">404</p>
+    <h1>{t('tr', '404.title')}</h1>
+    <p>{t('tr', '404.body')}</p>
+    <p class="lost__en" lang="en"><strong>{t('en', '404.title')}.</strong> {t('en', '404.body')}</p>
+    <p class="lost__links">
+      <a class="btn" href="/cv">CV (TR)</a>
+      <a class="btn" href="/en/cv">CV (EN)</a>
+    </p>
+  </div>
+</Base>
+
+<script>
+  import { drawParlavan, reducedMotion } from '../scripts/parlavan';
+
+  const canvas = document.querySelector<HTMLCanvasElement>('.lost__bug');
+  if (canvas) {
+    const ctx = canvas.getContext('2d')!;
+    let frame: 0 | 1 = 0;
+    const paint = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawParlavan(ctx, frame, 0, 0, 10);
+    };
+    paint();
+    if (!reducedMotion()) {
+      setInterval(() => {
+        frame = frame === 0 ? 1 : 0;
+        paint();
+      }, 220); // chewing on the missing page
+    }
+  }
+</script>
+
+<style>
+  .lost {
+    padding-block: 5rem 2rem;
+    max-width: 38rem;
+  }
+  .lost__bug {
+    width: 170px;
+    height: 90px;
+    image-rendering: pixelated;
+  }
+  .lost__code {
+    margin-top: 1.5rem;
+    font-family: var(--font-display);
+    font-size: 1rem;
+    letter-spacing: 0.3em;
+    color: var(--gold);
+  }
+  .lost h1 {
+    font-family: var(--font-display);
+    font-size: 2.4rem;
+    margin: 0.2rem 0 0.8rem;
+  }
+  .lost p {
+    color: var(--muted);
+  }
+  .lost__en {
+    margin-top: 0.8rem;
+    font-size: 0.92rem;
+  }
+  .lost__en strong {
+    color: var(--text);
+  }
+  .lost__links {
+    display: flex;
+    gap: 0.6rem;
+    margin-top: 1.6rem;
+  }
+</style>

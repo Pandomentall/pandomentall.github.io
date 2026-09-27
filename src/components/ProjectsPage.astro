@@ -1,0 +1,61 @@
+---
+// Tech zone list: wide row cards (WorkRow), same structure as games but in the calm
+// "workbench" universe: rounded corners, sans headings, each project's own colours and effect.
+import Base from '../layouts/Base.astro';
+import WorkRow from './WorkRow.astro';
+import { listWorks, slugOf } from '../lib/works';
+import { pathFor, t, type Lang } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const projects = await listWorks('projects', lang);
+---
+
+<Base lang={lang} route="projects" zone="tech" title={`${t(lang, 'projects.title')} — Ender Aygün`} description={t(lang, 'projects.lead')}>
+  <div class="container container--wide projects">
+    <header class="head">
+      <p class="label">~/{lang === 'tr' ? 'projeler' : 'projects'}</p>
+      <h1>{t(lang, 'projects.title')}</h1>
+      <p class="head__lead">{t(lang, 'projects.lead')}</p>
+    </header>
+
+    <ul class="rows">
+      {
+        projects.map((p, i) => (
+          <li>
+            <WorkRow item={p} index={i} href={pathFor('projects', lang, slugOf(p))} lang={lang} />
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</Base>
+
+<style>
+  .projects {
+    padding-top: 3.5rem;
+    --row-radius: 14px;
+  }
+  .head .label {
+    color: var(--blue);
+  }
+  .head h1 {
+    margin: 0.3rem 0 0.6rem;
+    font-size: clamp(2.2rem, 6vw, 3rem);
+    font-weight: 650;
+    letter-spacing: -0.035em;
+  }
+  .head__lead {
+    max-width: 38rem;
+    color: var(--muted);
+  }
+  .rows {
+    display: grid;
+    gap: 1rem;
+    margin: 2.5rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+</style>

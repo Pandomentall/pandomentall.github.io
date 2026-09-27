@@ -1,0 +1,359 @@
+---
+// The CV page is the original PDF, reproduced as a paper sheet on the site: same sections,
+// same order, same look. Only difference from Ender's own PDF: no phone, no references'
+// contact details, no birth date. The downloadable PDF is printed from this page.
+import { Image } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import EmailLink from './EmailLink.astro';
+import photo from '../assets/ender.png';
+import Download from '@tabler/icons/outline/download.svg';
+import {
+  education,
+  experience,
+  interests,
+  person,
+  profile,
+  projectsIntro,
+  references,
+  sectionTitles,
+} from '../data/cv';
+import { t, type Lang } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+
+// Generated after `astro build` by scripts/build-assets.mjs.
+const pdfHref = `/cv/ender-aygun-cv-${lang}.pdf`;
+---
+
+<Base lang={lang} route="cv" zone="cv" title={t(lang, 'cv.pageTitle')} description={t(lang, 'cv.description')}>
+  <div class="container container--wide cvwrap">
+    <div class="toolbar">
+      <a class="btn btn--accent" href={pdfHref} download>
+        <Download class="icon" aria-hidden="true" />
+        {t(lang, 'cv.downloadPdf')}
+      </a>
+    </div>
+
+    <article class="sheet">
+      <header class="band">
+        <div class="band__name">
+          <h1>{person.name}</h1>
+          <p class="band__title">{person.title[lang]}</p>
+        </div>
+        <div class="band__meta">
+          <EmailLink lang={lang} />
+          <span>{person.location[lang]}</span>
+        </div>
+        <Image class="band__photo" src={photo} alt="" width={220} height={220} format="webp" quality={88} loading="eager" />
+      </header>
+
+      <section aria-labelledby="profile-h">
+        <h2 id="profile-h">{sectionTitles.profile[lang]}</h2>
+        <p class="muted justify">{profile[lang]}</p>
+      </section>
+
+      <section aria-labelledby="experience-h">
+        <h2 id="experience-h">{sectionTitles.experience[lang]}</h2>
+        {
+          experience.map((job) => (
+            <div class="entry">
+              <p class="entry__period">{job.period}</p>
+              <div>
+                <h3>{job.company}</h3>
+                <p class="entry__role">{job.role[lang]}</p>
+                <ul class="bullets">
+                  {job.bullets.map((b) => (
+                    <li>{b[lang]}</li>
+                  ))}
+                </ul>
+                {job.modules && (
+                  <>
+                    <h4>{t(lang, 'cv.shippedModulesTitle')}</h4>
+                    <ul class="modules">
+                      {job.modules.map((m) => (
+                        <li>{m[lang]}</li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </div>
+            </div>
+          ))
+        }
+      </section>
+
+      <section aria-labelledby="projects-h">
+        <h2 id="projects-h">{sectionTitles.projects[lang]}</h2>
+        <p>{projectsIntro[lang]}</p>
+        {
+          interests.map((i) => (
+            <p class="muted interest">
+              {i.title[lang]}: {i.body[lang]}
+            </p>
+          ))
+        }
+      </section>
+
+      <section aria-labelledby="education-h">
+        <h2 id="education-h">{sectionTitles.education[lang]}</h2>
+        {
+          education.map((e) => (
+            <div class="entry">
+              <p class="entry__period">{e.period}</p>
+              <div>
+                <h3>{e.degree[lang]}</h3>
+                <p class="entry__role">{e.school[lang]}</p>
+              </div>
+            </div>
+          ))
+        }
+      </section>
+
+      <section aria-labelledby="references-h">
+        <h2 id="references-h">{sectionTitles.references[lang]}</h2>
+        {
+          references.map((r) => (
+            <div class="ref">
+              <h3>{r.name}</h3>
+              <p class="muted">{r.affiliation[lang]}</p>
+            </div>
+          ))
+        }
+        <p class="muted note">{t(lang, 'cv.referencesNote')}</p>
+      </section>
+    </article>
+  </div>
+</Base>
+
+<style>
+  /* Paper palette, taken from the original PDF. Same on screen and in print. */
+  .sheet {
+    --navy: #1f3a5f;
+    --rule: #4a86d0;
+    --ink: #1c2330;
+    --grey: #4e5866;
+    --soft: #6b7585;
+    --role: #3a6ea5;
+  }
+
+  .cvwrap {
+    padding-top: 2rem;
+    max-width: calc(52rem + 2 * var(--gutter));
+  }
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .sheet {
+    background: #fdfcf9;
+    color: var(--ink);
+    font-size: 0.94rem;
+    line-height: 1.5;
+    padding: 2.2rem 2.4rem 2.8rem;
+    border-radius: 4px;
+    box-shadow:
+      0 1px 0 rgb(255 255 255 / 0.04) inset,
+      0 24px 60px -24px rgb(0 0 0 / 0.55),
+      0 2px 8px rgb(0 0 0 / 0.25);
+  }
+  .sheet ::selection {
+    background: #cfe3f5;
+    color: var(--ink);
+  }
+
+  /* header band */
+  .band {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 1rem 1.4rem;
+    padding: 1.5rem 1.6rem;
+    background: var(--navy);
+    color: #fff;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .band h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .band__title {
+    margin-top: 0.2rem;
+    color: #b9d3ee;
+    font-style: italic;
+  }
+  .band__meta {
+    display: grid;
+    justify-items: end;
+    gap: 0.1rem;
+    color: #e6eef7;
+    font-size: 0.85rem;
+    text-align: right;
+  }
+  .band__meta :global(.email) {
+    gap: 0;
+  }
+  .band__meta :global(.email .icon) {
+    display: none;
+  }
+  .band__meta :global(a) {
+    color: #e6eef7;
+    text-decoration: none;
+  }
+  .band__meta :global(a:hover) {
+    text-decoration: underline;
+  }
+  .band__photo {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  /* sections */
+  section {
+    margin-top: 1.6rem;
+    padding-inline: 0.3rem;
+  }
+  h2 {
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 1.5px solid var(--rule);
+    color: var(--navy);
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .muted {
+    color: var(--grey);
+  }
+  .justify {
+    text-align: justify;
+    hyphens: auto;
+  }
+
+  .entry {
+    display: grid;
+    grid-template-columns: 7.5rem minmax(0, 1fr);
+    gap: 0.1rem 1rem;
+    break-inside: avoid;
+  }
+  .entry + .entry {
+    margin-top: 1.1rem;
+  }
+  .entry__period {
+    color: var(--soft);
+    font-size: 0.85rem;
+    padding-top: 0.1rem;
+  }
+  h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .entry__role {
+    color: var(--role);
+    font-style: italic;
+  }
+  .bullets {
+    margin: 0.4rem 0 0;
+    padding-left: 1.1rem;
+  }
+  .bullets li + li {
+    margin-top: 0.2rem;
+  }
+  .bullets li::marker {
+    content: '•  ';
+    color: var(--ink);
+  }
+  h4 {
+    margin: 0.7rem 0 0.2rem;
+    color: var(--navy);
+    font-size: 0.9rem;
+    font-weight: 700;
+  }
+  .modules {
+    margin: 0;
+    padding-left: 1.2rem;
+    color: var(--grey);
+    font-size: 0.9rem;
+  }
+  .modules li::marker {
+    content: '◦  ';
+    color: var(--soft);
+  }
+  .interest {
+    margin-top: 0.45rem;
+  }
+  .ref h3 {
+    font-size: 0.95rem;
+  }
+  .note {
+    margin-top: 0.3rem;
+    font-size: 0.85rem;
+    font-style: italic;
+  }
+
+  /* phones: the sheet reflows instead of shrinking */
+  @media (max-width: 640px) {
+    .cvwrap {
+      padding-inline: 0;
+    }
+    .toolbar {
+      padding-inline: var(--gutter);
+    }
+    .sheet {
+      padding: 0 0 2rem;
+      border-radius: 0;
+      font-size: 0.92rem;
+    }
+    .band {
+      grid-template-columns: 1fr auto;
+      padding: 1.3rem var(--gutter);
+    }
+    .band__meta {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      justify-items: start;
+      text-align: left;
+    }
+    .band__photo {
+      width: 76px;
+      height: 76px;
+    }
+    section {
+      padding-inline: var(--gutter);
+    }
+    .entry {
+      grid-template-columns: 1fr;
+    }
+    .justify {
+      text-align: left;
+    }
+  }
+
+  @media print {
+    .toolbar {
+      display: none;
+    }
+    .cvwrap {
+      padding: 0;
+      max-width: none;
+    }
+    .sheet {
+      padding: 0;
+      box-shadow: none;
+      background: #fff;
+      font-size: 1rem;
+    }
+  }
+</style>

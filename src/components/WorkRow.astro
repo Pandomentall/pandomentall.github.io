@@ -1,0 +1,249 @@
+---
+// Wide row card shared by the projects and games lists. Wears the item's own colours
+// (frame + glow) and plays its hover particle effect (src/scripts/fx.ts).
+// Layers: media → fx canvas → text, so the effect sits on the image but under the words.
+import { Image } from 'astro:assets';
+import GameArt from './GameArt.astro';
+import ProjectLogo from './ProjectLogo.astro';
+import ArrowRight from '@tabler/icons/outline/arrow-right.svg';
+import { t, type Lang } from '../i18n/ui';
+import type { Work } from '../lib/works';
+
+interface Props {
+  item: Work;
+  index: number;
+  href: string;
+  lang: Lang;
+}
+const { item, index, href, lang } = Astro.props;
+const d = item.data;
+const game = item.collection === 'games' ? (item as Extract<Work, { collection: 'games' }>) : null;
+const project = item.collection === 'projects' ? (item as Extract<Work, { collection: 'projects' }>) : null;
+
+const kicker = game ? game.data.genre : t(lang, `kind.${project!.data.kind}`);
+const meta = game ? [game.data.jam, game.data.engine] : d.tags.slice(0, 3);
+---
+
+<a
+  class:list={['row', { 'row--game': !!game }]}
+  href={href}
+  data-fx={d.fx}
+  data-a1={d.accent[0]}
+  data-a2={d.accent[1]}
+  style={`--a1:${d.accent[0]};--a2:${d.accent[1]}`}
+>
+  <span class="row__index">{String(index + 1).padStart(2, '0')}</span>
+  <div class="row__media" data-fx-media>
+    {
+      d.thumb ? (
+        <Image src={d.thumb} alt="" width={640} format="webp" quality={78} />
+      ) : game?.data.art ? (
+        <GameArt id={game.data.art} />
+      ) : project ? (
+        <span class="row__logo">
+          <ProjectLogo entry={project} size={72} />
+        </span>
+      ) : null
+    }
+    {project && d.thumb && <span class="row__badge"><ProjectLogo entry={project} size={36} /></span>}
+  </div>
+  <canvas class="fx" aria-hidden="true"></canvas>
+  <div class="row__body">
+    <p class="row__kicker">{kicker}</p>
+    <h2>{d.title}</h2>
+    <p class="row__summary">{d.summary}</p>
+    <p class="row__meta">
+      <span class="row__status">{t(lang, `status.${d.status}`)}</span>
+      {d.award && <span class="row__award">★ {d.award}</span>}
+      {meta.filter(Boolean).map((m) => <span>{m}</span>)}
+    </p>
+  </div>
+  <ArrowRight class="row__arrow" aria-hidden="true" />
+</a>
+
+<script>
+  import { attachFx } from '../scripts/fx';
+  document.querySelectorAll<HTMLElement>('a.row[data-fx]').forEach(attachFx);
+</script>
+
+<style>
+  .row {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--a1) 35%, var(--border));
+    border-radius: var(--row-radius, 0);
+    background: color-mix(in srgb, var(--surface) 82%, transparent);
+    backdrop-filter: blur(3px);
+    color: var(--text);
+    text-decoration: none;
+    box-shadow: inset 3px 0 0 var(--a1);
+    transition:
+      border-color 220ms,
+      box-shadow 320ms var(--ease),
+      transform 320ms var(--ease);
+  }
+  .row:hover,
+  .row:focus-visible {
+    border-color: color-mix(in srgb, var(--a1) 75%, transparent);
+    box-shadow:
+      inset 5px 0 0 var(--a1),
+      0 0 32px -6px color-mix(in srgb, var(--a1) 55%, transparent),
+      0 0 60px -20px color-mix(in srgb, var(--a2) 60%, transparent);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .row:hover {
+      transform: translateX(4px);
+    }
+    .row:hover .row__media :global(img),
+    .row:hover .row__media :global(.cover > *) {
+      transform: scale(1.05);
+    }
+  }
+  @media (min-width: 760px) {
+    .row {
+      grid-template-columns: 3.5rem 17rem minmax(0, 1fr) 3.5rem;
+      align-items: stretch;
+      min-height: 10.5rem;
+    }
+  }
+
+  .fx {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    pointer-events: none;
+  }
+  .row__index,
+  .row__body,
+  .row__arrow {
+    position: relative;
+    z-index: 2;
+  }
+
+  .row__index {
+    display: none;
+    align-self: center;
+    justify-self: center;
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--a1);
+  }
+  .row__media {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: #1c232c;
+  }
+  .row__media :global(img),
+  .row__media :global(.cover) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 0 0;
+    aspect-ratio: auto;
+    transition: transform 600ms var(--ease);
+  }
+  .row__logo {
+    display: grid;
+    place-items: center;
+    height: 100%;
+    background: radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--a1) 22%, transparent), transparent 70%);
+  }
+  .row__badge {
+    position: absolute;
+    left: 0.6rem;
+    bottom: 0.6rem;
+    filter: drop-shadow(0 2px 6px rgb(0 0 0 / 0.5));
+  }
+  @media (min-width: 760px) {
+    .row__index {
+      display: block;
+    }
+    .row__media {
+      aspect-ratio: auto;
+      border-inline: 1px solid color-mix(in srgb, var(--a1) 25%, var(--border));
+    }
+  }
+  .row__body {
+    display: grid;
+    gap: 0.35rem;
+    align-content: center;
+    padding: 1.1rem 1.4rem 1.2rem;
+  }
+  .row__kicker {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--a1);
+  }
+  .row h2 {
+    font-size: 1.45rem;
+    font-weight: 650;
+    line-height: 1.15;
+    letter-spacing: -0.015em;
+  }
+  .row--game h2 {
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: 0;
+  }
+  .row__summary {
+    color: var(--muted);
+    font-size: 0.93rem;
+    max-width: 44rem;
+  }
+  .row__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 1rem;
+    margin-top: 0.35rem;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+  .row__status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--text);
+  }
+  .row__status::before {
+    content: '';
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background: var(--a1);
+    box-shadow: 0 0 8px var(--a1);
+  }
+  .row__award {
+    color: var(--gold);
+  }
+  .row__arrow {
+    display: none;
+    width: 1.4rem;
+    height: 1.4rem;
+    align-self: center;
+    justify-self: center;
+    color: var(--muted);
+    transition:
+      color 200ms,
+      transform 300ms var(--ease);
+  }
+  .row:hover .row__arrow {
+    color: var(--a1);
+    transform: translateX(3px);
+  }
+  @media (min-width: 760px) {
+    .row__arrow {
+      display: block;
+    }
+  }
+</style>

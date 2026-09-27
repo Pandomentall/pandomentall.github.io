@@ -1,0 +1,550 @@
+---
+import '@fontsource-variable/geist';
+import '@fontsource-variable/geist-mono';
+import '@fontsource/chakra-petch/600.css';
+import '@fontsource/chakra-petch/700.css';
+import '../styles/global.css';
+import EmailLink from '../components/EmailLink.astro';
+import SocialLinks from '../components/SocialLinks.astro';
+import Sun from '@tabler/icons/outline/sun.svg';
+import Moon from '@tabler/icons/outline/moon.svg';
+import Cloud from '@tabler/icons/outline/cloud.svg';
+import CloudRain from '@tabler/icons/outline/cloud-rain.svg';
+import Snowflake from '@tabler/icons/outline/snowflake.svg';
+import CloudFog from '@tabler/icons/outline/cloud-fog.svg';
+import CloudStorm from '@tabler/icons/outline/cloud-storm.svg';
+import ParlavanTrail from '../components/ParlavanTrail.astro';
+import Constellation from '../components/backdrops/Constellation.astro';
+import ParlamoniumRain from '../components/backdrops/ParlamoniumRain.astro';
+import Workbench from '../components/backdrops/Workbench.astro';
+import GameGrid from '../components/backdrops/GameGrid.astro';
+import { site } from '../data/site';
+import { hourlyStatus } from '../data/status';
+import { other, pathFor, t, type Lang, type RouteKey } from '../i18n/ui';
+
+export type Zone = 'cv' | 'game' | 'tech';
+
+interface Props {
+  lang: Lang;
+  // Omitted on pages without a counterpart (404): no language switch, no hreflang.
+  route?: RouteKey;
+  // Detail pages: slug under the route, same in both languages.
+  item?: string;
+  zone?: Zone;
+  // Game pages may bring their own world; default follows the zone.
+  backdrop?: 'constellation' | 'parlamonium' | 'grid' | 'workbench';
+  title: string;
+  description: string;
+  noindex?: boolean;
+}
+const { lang, route, item, zone = 'cv', title, description, noindex = false } = Astro.props;
+const backdrop =
+  Astro.props.backdrop ?? ({ cv: 'constellation', game: 'grid', tech: 'workbench' } as const)[zone];
+
+const alt = other(lang);
+const nav: { key: RouteKey; label: string; zone: Zone }[] = [
+  { key: 'cv', label: t(lang, 'nav.cv'), zone: 'cv' },
+  { key: 'projects', label: t(lang, 'nav.projects'), zone: 'tech' },
+  { key: 'games', label: t(lang, 'nav.games'), zone: 'game' },
+  { key: 'blog', label: t(lang, 'nav.blog'), zone: 'cv' },
+];
+const abs = (path: string) => new URL(path, site.url).href;
+const canonical = route ? abs(pathFor(route, lang, item)) : undefined;
+const ogImage = abs(`/og/cv-${lang}.png`);
+---
+
+<!doctype html>
+<html lang={lang} data-zone={zone}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content={zone === 'game' ? '#232940' : zone === 'tech' ? '#34414f' : '#2e3844'} />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex" />}
+    {canonical && <link rel="canonical" href={canonical} />}
+    {
+      route && (
+        <>
+          <link rel="alternate" hreflang="tr" href={abs(pathFor(route, 'tr', item))} />
+          <link rel="alternate" hreflang="en" href={abs(pathFor(route, 'en', item))} />
+          <link rel="alternate" hreflang="x-default" href={abs(pathFor(route, 'tr', item))} />
+        </>
+      )
+    }
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    {canonical && <meta property="og:url" content={canonical} />}
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content={lang === 'tr' ? 'tr_TR' : 'en_US'} />
+    <meta name="twitter:card" content="summary_large_image" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">{t(lang, 'nav.skip')}</a>
+
+    {backdrop === 'constellation' && <Constellation />}
+    {backdrop === 'parlamonium' && <ParlamoniumRain />}
+    {backdrop === 'grid' && <GameGrid />}
+    {backdrop === 'workbench' && <Workbench />}
+
+    <header class="site-header">
+      <div class="container container--wide site-header__inner">
+        <a class="brand" href={pathFor('home', lang)}>
+          <span class="brand__name">{site.name}</span>
+        </a>
+        <nav class="site-nav" aria-label="Site">
+          {
+            nav.map((item) => (
+              <a
+                href={pathFor(item.key, lang)}
+                data-zone-hint={item.zone}
+                aria-current={item.key === route ? 'page' : undefined}
+              >
+                {item.label}
+              </a>
+            ))
+          }
+        </nav>
+        {
+          route && (
+            <a
+              class="lang"
+              href={pathFor(route, alt, item)}
+              hreflang={alt}
+              lang={alt}
+              aria-label={t(lang, 'lang.switchLabel')}
+            >
+              {alt.toUpperCase()}
+            </a>
+          )
+        }
+      </div>
+      {zone === 'game' && <ParlavanTrail />}
+    </header>
+
+    <main id="main">
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <div class="container container--wide site-footer__inner">
+        <div class="site-footer__contact">
+          <p class="label">{t(lang, 'footer.contact')}</p>
+          <EmailLink lang={lang} />
+          <p class="site-footer__clock">
+            <span class="site-footer__dot" aria-hidden="true"></span>
+            {t(lang, 'footer.clock')}{' '}
+            <time data-clock data-lang={lang}>UTC+3</time>
+            <span class="site-footer__weather" data-weather data-lang={lang} hidden>
+              <span class="site-footer__sep" aria-hidden="true">·</span>
+              <span class="site-footer__wicon" data-weather-icon aria-hidden="true"></span>
+              <span data-weather-text></span>
+            </span>
+          </p>
+          <template id="weather-icons">
+            <Sun data-icon="sun" />
+            <Moon data-icon="moon" />
+            <Cloud data-icon="cloud" />
+            <CloudRain data-icon="rain" />
+            <Snowflake data-icon="snow" />
+            <CloudFog data-icon="fog" />
+            <CloudStorm data-icon="storm" />
+          </template>
+          <p class="site-footer__status" data-status hidden>
+            <span class="site-footer__sdot" aria-hidden="true"></span>
+            <span>
+              <span data-status-text></span>{' '}
+              <span class="site-footer__since" data-status-since></span>
+            </span>
+          </p>
+          <script
+            type="application/json"
+            id="status-data"
+            set:html={JSON.stringify(hourlyStatus.map((h) => ({ type: h.type, text: h.text[lang] })))}
+          />
+        </div>
+        <div class="site-footer__socials">
+          <SocialLinks />
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      // Live local time in Bandırma, so people writing in know what hour it is here.
+      for (const el of document.querySelectorAll<HTMLTimeElement>('[data-clock]')) {
+        const fmt = new Intl.DateTimeFormat(el.dataset.lang === 'tr' ? 'tr-TR' : 'en-GB', {
+          hour: '2-digit',
+          minute: '2-digit',
+          timeZone: 'Europe/Istanbul',
+        });
+        const partsFmt = new Intl.DateTimeFormat('en-GB', {
+          hour: 'numeric',
+          minute: 'numeric',
+          hourCycle: 'h23',
+          timeZone: 'Europe/Istanbul',
+        });
+        const statuses: { type: string; text: string }[] = JSON.parse(
+          document.getElementById('status-data')?.textContent ?? '[]',
+        );
+        const status = document.querySelector<HTMLElement>('[data-status]');
+        const tr = el.dataset.lang === 'tr';
+        const since = (mins: number) => {
+          const h = Math.floor(mins / 60);
+          const m = mins % 60;
+          if (tr) return h ? `${h} saat ${m} dakikadır` : `${Math.max(m, 1)} dakikadır`;
+          return h ? `for ${h} h ${m} min` : `for ${Math.max(m, 1)} min`;
+        };
+        const tick = () => {
+          const now = new Date();
+          el.textContent = fmt.format(now);
+          el.dateTime = now.toISOString();
+          if (!status || statuses.length !== 24) return;
+          const [hh, mm] = partsFmt.format(now).split(':').map(Number);
+          const cur = statuses[hh % 24];
+          // walk back to where this kind of activity started
+          let back = 0;
+          while (back < 23 && statuses[(hh - back - 1 + 24) % 24].type === cur.type) back++;
+          status.dataset.type = cur.type;
+          status.querySelector('[data-status-text]')!.textContent = cur.text;
+          status.querySelector('[data-status-since]')!.textContent = `· ${since(back * 60 + mm)}`;
+          status.hidden = false;
+        };
+        tick();
+        setInterval(tick, 15000);
+      }
+
+      // Current weather in Bandırma next to the clock. Open-Meteo: free, no key, CORS open.
+      // Cached for 15 minutes per tab; on any failure the weather simply stays hidden.
+      const weather = document.querySelector<HTMLElement>('[data-weather]');
+      if (weather) {
+        const tr = weather.dataset.lang === 'tr';
+        const API =
+          'https://api.open-meteo.com/v1/forecast?latitude=40.35&longitude=27.97&current=temperature_2m,weather_code,is_day&timezone=Europe%2FIstanbul';
+        // WMO weather code -> [icon, tr, en]
+        const describe = (code: number, day: boolean): [string, string, string] => {
+          if (code === 0) return [day ? 'sun' : 'moon', 'açık', 'clear'];
+          if (code <= 2) return ['cloud', 'parçalı bulutlu', 'partly cloudy'];
+          if (code === 3) return ['cloud', 'kapalı', 'overcast'];
+          if (code === 45 || code === 48) return ['fog', 'sisli', 'foggy'];
+          if (code >= 51 && code <= 57) return ['rain', 'çiseliyor', 'drizzle'];
+          if (code === 61 || code === 80) return ['rain', 'hafif yağmur', 'light rain'];
+          if ((code >= 63 && code <= 67) || code === 81 || code === 82) return ['rain', 'yağmurlu', 'rain'];
+          if ((code >= 71 && code <= 77) || code === 85 || code === 86) return ['snow', 'karlı', 'snow'];
+          if (code >= 95) return ['storm', 'fırtına', 'thunderstorm'];
+          return ['cloud', 'bulutlu', 'cloudy'];
+        };
+        type Current = { temperature_2m: number; weather_code: number; is_day: number };
+        const show = (c: Current) => {
+          const [icon, trText, enText] = describe(c.weather_code, c.is_day === 1);
+          const svg = document
+            .querySelector<HTMLTemplateElement>('#weather-icons')
+            ?.content.querySelector(`[data-icon="${icon}"]`);
+          weather.querySelector('[data-weather-icon]')!.replaceChildren(...(svg ? [svg.cloneNode(true)] : []));
+          weather.querySelector('[data-weather-text]')!.textContent =
+            `${Math.round(c.temperature_2m)}°C, ${tr ? trText : enText}`;
+          weather.hidden = false;
+        };
+        const load = async () => {
+          try {
+            const hit = JSON.parse(sessionStorage.getItem('bandirma-weather') ?? 'null');
+            if (hit && Date.now() - hit.at < 15 * 60_000) return show(hit.current);
+          } catch {}
+          try {
+            const res = await fetch(API);
+            if (!res.ok) return;
+            const { current } = (await res.json()) as { current: Current };
+            show(current);
+            try {
+              sessionStorage.setItem('bandirma-weather', JSON.stringify({ at: Date.now(), current }));
+            } catch {}
+          } catch {}
+        };
+        load();
+        setInterval(load, 15 * 60_000);
+      }
+
+      // A hello for the curious ones who open the console.
+      console.log(
+        '%cEA%c  Merhaba / Hi. Kaynak kodu: https://github.com/Pandomentall/pandomentall.github.io',
+        'background:#8cc8ec;color:#1d2833;font-weight:700;padding:2px 6px;border-radius:4px',
+        'color:inherit',
+      );
+    </script>
+  </body>
+</html>
+
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: color-mix(in srgb, var(--bg) 82%, transparent);
+    backdrop-filter: blur(10px) saturate(1.2);
+    border-bottom: 1px solid var(--border-soft);
+    view-transition-name: site-header;
+  }
+  [data-zone='game'] .site-header {
+    border-bottom-color: transparent;
+  }
+  .site-header__inner {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.25rem 1.25rem;
+    min-height: var(--header-h);
+    padding-block: 0.5rem;
+  }
+  /* Name pill: on hover a light fill sweeps in from the left and the text flips dark,
+     then a glint passes over it. The game zone sweeps in Parlamonium gold -> purple. */
+  .brand {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    overflow: hidden;
+    padding: 0.38rem 0.95rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--surface) 75%, transparent);
+    color: var(--text);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    text-decoration: none;
+    isolation: isolate;
+    transition:
+      color 320ms var(--ease),
+      border-color 320ms var(--ease),
+      letter-spacing 320ms var(--ease);
+  }
+  .brand::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--blue);
+    transform: translateX(-101%);
+    transition: transform 420ms var(--ease);
+  }
+  [data-zone='game'] .brand::before {
+    background: linear-gradient(90deg, var(--gold), var(--purple));
+  }
+  .brand::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -60%;
+    width: 40%;
+    background: linear-gradient(100deg, transparent, rgb(255 255 255 / 0.45), transparent);
+    pointer-events: none;
+  }
+  .brand:hover,
+  .brand:focus-visible {
+    color: #1d2833;
+    border-color: transparent;
+    letter-spacing: 0.01em;
+  }
+  .brand:hover::before,
+  .brand:focus-visible::before {
+    transform: none;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .brand:hover::after {
+      left: 120%;
+      transition: left 700ms var(--ease) 180ms;
+    }
+  }
+  .site-nav {
+    display: flex;
+    gap: 0.15rem;
+    order: 3;
+    width: 100%;
+    margin-inline: -0.55rem;
+  }
+  .site-nav a {
+    position: relative;
+    padding: 0.3rem 0.55rem;
+    border-radius: 8px;
+    color: var(--muted);
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: color 160ms;
+  }
+  .site-nav a:hover {
+    color: var(--text);
+  }
+  /* Each nav item hints at the voice of the zone it leads to. */
+  .site-nav a::after {
+    content: '';
+    position: absolute;
+    left: 0.55rem;
+    right: 0.55rem;
+    bottom: 0.1rem;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--blue);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 220ms var(--ease);
+  }
+  .site-nav a[data-zone-hint='game']::after {
+    background: linear-gradient(90deg, var(--gold), var(--purple));
+  }
+  .site-nav a:hover::after,
+  .site-nav a[aria-current='page']::after {
+    transform: scaleX(1);
+  }
+  .site-nav a[aria-current='page'] {
+    color: var(--text);
+  }
+  .lang {
+    margin-left: auto;
+    padding: 0.2rem 0.55rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    text-decoration: none;
+    transition:
+      color 160ms,
+      border-color 160ms;
+  }
+  .lang:hover {
+    color: var(--blue);
+    border-color: var(--blue);
+  }
+
+  @media (min-width: 640px) {
+    .site-nav {
+      order: 0;
+      width: auto;
+      margin-inline: 0.75rem 0;
+    }
+  }
+
+  .site-footer {
+    margin-top: 5rem;
+    border-top: 1px solid var(--border-soft);
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  .site-footer__inner {
+    display: grid;
+    gap: 2rem;
+    padding-block: 2.5rem 3rem;
+  }
+  @media (min-width: 900px) {
+    .site-footer__inner {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 33rem);
+      align-items: start;
+    }
+  }
+  .site-footer__contact {
+    display: grid;
+    gap: 0.35rem;
+    align-content: start;
+  }
+  .site-footer__contact .label {
+    margin-bottom: 0.1rem;
+  }
+  .site-footer__clock {
+    flex-wrap: wrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1.1rem;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+  }
+  .site-footer__clock time {
+    color: var(--text);
+  }
+  .site-footer__weather {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--text);
+  }
+  .site-footer__weather[hidden] {
+    display: none;
+  }
+  .site-footer__sep {
+    color: var(--muted);
+  }
+  .site-footer__wicon {
+    display: inline-flex;
+    color: var(--blue);
+  }
+  .site-footer__wicon :global(svg) {
+    width: 0.95rem;
+    height: 0.95rem;
+  }
+  .site-footer__status {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 0.5rem;
+    max-width: 40rem;
+    color: var(--text);
+    font-size: 0.9rem;
+  }
+  .site-footer__status[hidden] {
+    display: none;
+  }
+  .site-footer__since {
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+  }
+  .site-footer__sdot {
+    margin-top: 0.45em;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: var(--sage);
+  }
+  [data-type='work'] .site-footer__sdot {
+    background: #f2c572;
+    box-shadow: 0 0 6px rgb(242 197 114 / 0.7);
+  }
+  [data-type='life'] .site-footer__sdot {
+    background: #a8cfae;
+    box-shadow: 0 0 6px rgb(168 207 174 / 0.6);
+  }
+  [data-type='sleep'] .site-footer__sdot {
+    background: #0d1117;
+    box-shadow: 0 0 0 1px #6b7585;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .site-footer__sdot,
+    .site-footer__dot {
+      animation: soft-blink 2.4s ease-in-out infinite;
+    }
+    [data-type='sleep'] .site-footer__sdot {
+      animation-duration: 4.5s;
+    }
+  }
+  @keyframes soft-blink {
+    50% {
+      opacity: 0.35;
+    }
+  }
+  .site-footer__dot {
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 50%;
+    background: var(--sage);
+  }
+
+  @media print {
+    .skip-link,
+    .site-header,
+    .site-footer {
+      display: none;
+    }
+  }
+</style>

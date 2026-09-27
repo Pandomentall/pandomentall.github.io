@@ -1,0 +1,75 @@
+---
+// Code-drawn art for games without publishable media (Ender has no Ellam art to publish
+// yet). Keyed by the `art` field of a game entry.
+interface Props {
+  id: 'ellam';
+}
+const { id } = Astro.props;
+
+// Deterministic Parlamonium streaks for the Ellam cover.
+let seed = 7;
+const rnd = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+const streaks = Array.from({ length: 26 }, () => {
+  const x = rnd() * 420;
+  const y = rnd() * 260;
+  const len = 14 + rnd() * 30;
+  return { x, y, x2: x + len * 0.32, y2: y - len, purple: rnd() < 0.2, o: 0.25 + rnd() * 0.55 };
+});
+---
+
+<div class="cover" data-cover={id} aria-hidden="true">
+  {
+    id === 'ellam' && (
+      <svg viewBox="0 0 400 250" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <linearGradient id="ellam-sky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#1f2631" />
+            <stop offset="1" stop-color="#2b2540" />
+          </linearGradient>
+          <radialGradient id="ellam-moon" cx="35%" cy="30%" r="75%">
+            <stop offset="0" stop-color="#4a5468" />
+            <stop offset="1" stop-color="#262e39" />
+          </radialGradient>
+        </defs>
+        <rect width="400" height="250" fill="url(#ellam-sky)" />
+        <circle cx="330" cy="300" r="190" fill="url(#ellam-moon)" />
+        <circle cx="330" cy="300" r="190" fill="none" stroke="#f2c572" stroke-opacity="0.5" stroke-width="1.5" />
+        <circle cx="270" cy="170" r="22" fill="#262e39" opacity="0.6" />
+        <circle cx="360" cy="150" r="12" fill="#262e39" opacity="0.6" />
+        <g stroke-linecap="round">
+          {streaks.map((s) => (
+            <line
+              x1={s.x.toFixed(1)}
+              y1={s.y.toFixed(1)}
+              x2={s.x2.toFixed(1)}
+              y2={s.y2.toFixed(1)}
+              stroke={s.purple ? '#b9a2f5' : '#f2c572'}
+              stroke-opacity={s.o.toFixed(2)}
+              stroke-width="1.4"
+            />
+          ))}
+        </g>
+        <g fill="#8cc8ec">
+          <rect x="92" y="150" width="14" height="22" rx="3" />
+          <rect x="86" y="170" width="26" height="4" rx="2" opacity="0.8" />
+        </g>
+        <circle cx="99" cy="160" r="34" fill="none" stroke="#8cc8ec" stroke-opacity="0.35" stroke-dasharray="3 5" />
+      </svg>
+    )
+  }
+</div>
+
+<style>
+  .cover {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    background: var(--surface-2);
+  }
+  .cover > :global(*) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    transition: transform 500ms var(--ease);
+  }
+</style>

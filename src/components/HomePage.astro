@@ -1,0 +1,605 @@
+---
+// Landing page. Hero with layered parallax (orbit rings, outline monogram, text), then the
+// site's sections as folders: each folder rises into view at its own speed and its papers
+// (previews of what is inside) slide out as you scroll; hovering pulls them further.
+// All motion is CSS scroll timelines; without support or with reduced motion the page is static.
+import { Image } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import EmailLink from './EmailLink.astro';
+import ProjectLogo from './ProjectLogo.astro';
+import GameArt from './GameArt.astro';
+import ArrowRight from '@tabler/icons/outline/arrow-right.svg';
+import { person } from '../data/cv';
+import { listWorks } from '../lib/works';
+import { pathFor, t, type Lang, type RouteKey } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const projects = await listWorks('projects', lang);
+const games = await listWorks('games', lang);
+
+type Folder = { key: RouteKey; title: string; text: string; count: string; c1: string; c2: string };
+const folders: Folder[] = [
+  { key: 'cv', title: 'CV', text: t(lang, 'home.folder.cv'), count: t(lang, 'home.count.cv'), c1: '#8cc8ec', c2: '#5d8fb8' },
+  {
+    key: 'projects',
+    title: t(lang, 'nav.projects'),
+    text: t(lang, 'home.folder.projects'),
+    count: `${projects.length} ${t(lang, 'home.count.projects')}`,
+    c1: '#a8cfae',
+    c2: '#6f9c78',
+  },
+  {
+    key: 'games',
+    title: t(lang, 'nav.games'),
+    text: t(lang, 'home.folder.games'),
+    count: `${games.length} ${t(lang, 'home.count.games')}`,
+    c1: '#f2c572',
+    c2: '#b9a2f5',
+  },
+  { key: 'blog', title: t(lang, 'nav.blog'), text: t(lang, 'home.folder.blog'), count: t(lang, 'home.count.blog'), c1: '#e9b98b', c2: '#b8866a' },
+];
+---
+
+<Base lang={lang} route="home" zone="cv" title={t(lang, 'home.title')} description={t(lang, 'home.description')}>
+  <section class="hero">
+    <div class="hero__layers" aria-hidden="true">
+      <svg class="orbits" viewBox="0 0 600 600">
+        <circle cx="300" cy="300" r="140" />
+        <circle cx="300" cy="300" r="210" />
+        <circle cx="300" cy="300" r="285" />
+        <g class="orbit orbit--1"><circle cx="440" cy="300" r="5" class="planet" /></g>
+        <g class="orbit orbit--2"><circle cx="300" cy="90" r="7" class="planet planet--gold" /></g>
+        <g class="orbit orbit--3"><circle cx="15" cy="300" r="4" class="planet planet--sage" /></g>
+        <circle cx="300" cy="300" r="46" class="core" />
+      </svg>
+      <p class="mono-bg">EA</p>
+    </div>
+
+    <div class="container container--wide hero__content">
+      <p class="hero__hello">{t(lang, 'home.hello')}</p>
+      <h1>{person.name}</h1>
+      <p class="hero__title">{person.title[lang]}</p>
+      <p class="hero__intro">{t(lang, 'home.intro')}</p>
+      <p class="hero__actions">
+        <a class="btn btn--accent" href={pathFor('cv', lang)}>
+          {t(lang, 'home.seeCv')}
+          <ArrowRight class="icon" aria-hidden="true" />
+        </a>
+        <a class="btn" href="#folders">{t(lang, 'home.foldersTitle')}</a>
+      </p>
+    </div>
+
+    <a class="scroll-cue" href="#folders" aria-label={t(lang, 'home.foldersTitle')}>
+      <span class="scroll-cue__line" aria-hidden="true"></span>
+    </a>
+  </section>
+
+  <section id="folders" class="container container--wide folders" aria-labelledby="folders-h">
+    <h2 id="folders-h">{t(lang, 'home.foldersTitle')}</h2>
+
+    <ul class="grid">
+      {
+        folders.map((f, i) => (
+          <li class="slot" style={`--c1:${f.c1};--c2:${f.c2};--depth:${[70, 130, 100, 160][i]}px`}>
+            <a class="folder" href={pathFor(f.key, lang)}>
+              <span class="folder__back">
+                <span class="folder__tab">{f.title}</span>
+              </span>
+
+              <span class="papers" aria-hidden="true">
+                {f.key === 'cv' && (
+                  <>
+                    <span class="paper paper--1 paper--doc">
+                      <span class="doc__band" />
+                      <span class="doc__line" />
+                      <span class="doc__line doc__line--short" />
+                      <span class="doc__line" />
+                    </span>
+                    <span class="paper paper--2 paper--pdf">PDF</span>
+                  </>
+                )}
+                {f.key === 'projects' &&
+                  projects.slice(0, 3).map((p, k) => (
+                    <span class={`paper paper--${k + 1} paper--logo`}>
+                      <ProjectLogo entry={p} size={52} />
+                    </span>
+                  ))}
+                {f.key === 'games' &&
+                  games.slice(0, 3).map((g, k) => (
+                    <span class={`paper paper--${k + 1} paper--shot`}>
+                      {g.data.thumb ? (
+                        <Image src={g.data.thumb} alt="" width={320} format="webp" quality={70} />
+                      ) : g.data.art ? (
+                        <GameArt id={g.data.art} />
+                      ) : null}
+                    </span>
+                  ))}
+                {f.key === 'blog' && (
+                  <>
+                    <span class="paper paper--1 paper--note">
+                      <span class="doc__line" />
+                      <span class="doc__line doc__line--short" />
+                      <span class="doc__line" />
+                    </span>
+                    <span class="paper paper--2 paper--note">
+                      <span class="doc__line doc__line--short" />
+                      <span class="doc__line" />
+                    </span>
+                  </>
+                )}
+              </span>
+
+              <span class="folder__front">
+                <span class="folder__title">{f.title}</span>
+                <span class="folder__text">{f.text}</span>
+                <span class="folder__meta">
+                  <span>{f.count}</span>
+                  <span class="folder__open">
+                    {t(lang, 'home.open')} <ArrowRight class="icon" aria-hidden="true" />
+                  </span>
+                </span>
+              </span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <section class="container container--wide outro">
+    <h2>{t(lang, 'home.outroTitle')}</h2>
+    <p class="outro__body">{t(lang, 'home.outroBody')}</p>
+    <p class="outro__mail"><EmailLink lang={lang} copyButton /></p>
+  </section>
+</Base>
+
+<style>
+  /* ---------- hero ---------- */
+  .hero {
+    position: relative;
+    min-height: calc(100svh - var(--header-h));
+    display: grid;
+    align-items: center;
+    overflow: hidden;
+  }
+  .hero__layers {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .orbits {
+    position: absolute;
+    width: min(92vw, 720px);
+    right: -8vw;
+    top: 50%;
+    translate: 0 -50%;
+    opacity: 0.8;
+  }
+  .orbits > circle {
+    fill: none;
+    stroke: rgb(140 200 236 / 0.14);
+    stroke-dasharray: 2 7;
+  }
+  .orbits .core {
+    fill: rgb(140 200 236 / 0.08);
+    stroke: rgb(140 200 236 / 0.35);
+    stroke-dasharray: none;
+  }
+  .planet {
+    fill: #8cc8ec;
+    filter: drop-shadow(0 0 6px #8cc8ec);
+  }
+  .planet--gold {
+    fill: #f2c572;
+    filter: drop-shadow(0 0 8px #f2c572);
+  }
+  .planet--sage {
+    fill: #a8cfae;
+  }
+  .orbit {
+    transform-origin: 300px 300px;
+  }
+  .mono-bg {
+    position: absolute;
+    left: -2vw;
+    bottom: -6vw;
+    margin: 0;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: clamp(12rem, 34vw, 30rem);
+    line-height: 1;
+    color: transparent;
+    -webkit-text-stroke: 1px rgb(140 200 236 / 0.1);
+    letter-spacing: -0.04em;
+    user-select: none;
+  }
+
+  .hero__content {
+    position: relative;
+    padding-block: 4rem 6rem;
+  }
+  .hero__hello {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--sand);
+  }
+  .hero h1 {
+    margin: 0.3rem 0 0.4rem;
+    font-size: clamp(3rem, 11vw, 6.5rem);
+    font-weight: 700;
+    letter-spacing: -0.05em;
+    line-height: 0.95;
+  }
+  .hero__title {
+    font-size: clamp(1.1rem, 2.6vw, 1.45rem);
+    color: var(--blue);
+    font-weight: 500;
+  }
+  .hero__intro {
+    margin-top: 1.2rem;
+    max-width: 36rem;
+    color: var(--muted);
+    font-size: 1.05rem;
+  }
+  .hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 1.8rem;
+  }
+
+  .scroll-cue {
+    position: absolute;
+    left: 50%;
+    bottom: 1.5rem;
+    translate: -50% 0;
+    display: grid;
+    justify-items: center;
+    gap: 0.6rem;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    text-decoration: none;
+  }
+  .scroll-cue__line {
+    width: 1px;
+    height: 2.4rem;
+    background: linear-gradient(var(--blue), transparent);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .orbit--1 {
+      animation: spin 26s linear infinite;
+    }
+    .orbit--2 {
+      animation: spin 44s linear infinite reverse;
+    }
+    .orbit--3 {
+      animation: spin 70s linear infinite;
+    }
+    .scroll-cue__line {
+      animation: cue 2.2s var(--ease) infinite;
+      transform-origin: top;
+    }
+    /* Parallax: layers leave the hero at different speeds while you scroll it away. */
+    @supports (animation-timeline: scroll()) {
+      .hero__content {
+        animation: hero-text linear both;
+        animation-timeline: scroll(root);
+        animation-range: 0 90vh;
+      }
+      .orbits {
+        animation: hero-orbits linear both;
+        animation-timeline: scroll(root);
+        animation-range: 0 100vh;
+      }
+      .mono-bg {
+        animation: hero-mono linear both;
+        animation-timeline: scroll(root);
+        animation-range: 0 100vh;
+      }
+    }
+  }
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes cue {
+    0% {
+      transform: scaleY(0);
+    }
+    60% {
+      transform: scaleY(1);
+      opacity: 1;
+    }
+    100% {
+      transform: scaleY(1);
+      opacity: 0;
+    }
+  }
+  @keyframes hero-text {
+    to {
+      transform: translateY(-18vh);
+      opacity: 0;
+    }
+  }
+  @keyframes hero-orbits {
+    to {
+      transform: translateY(-34vh) rotate(25deg);
+    }
+  }
+  @keyframes hero-mono {
+    to {
+      transform: translateY(-8vh);
+    }
+  }
+
+  /* ---------- folders ---------- */
+  .folders {
+    padding-top: 4rem;
+  }
+  .folders > h2 {
+    margin: 0.3rem 0 2.5rem;
+    font-size: clamp(1.8rem, 4vw, 2.4rem);
+    font-weight: 650;
+    letter-spacing: -0.03em;
+  }
+  .grid {
+    display: grid;
+    gap: 3.5rem 2rem;
+    margin: 0;
+    padding: 5rem 0 0;
+    list-style: none;
+  }
+  @media (min-width: 760px) {
+    .grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    /* stagger the right column like papers on a desk */
+    .slot:nth-child(even) {
+      margin-top: 4rem;
+    }
+  }
+
+  .folder {
+    position: relative;
+    display: block;
+    height: 17rem;
+    color: var(--text);
+    text-decoration: none;
+    perspective: 900px;
+  }
+  .folder__back {
+    position: absolute;
+    inset: 0;
+    border-radius: 4px 14px 14px 14px;
+    background: color-mix(in srgb, var(--c2) 55%, #1e2630);
+    box-shadow: 0 18px 40px -18px rgb(0 0 0 / 0.6);
+  }
+  .folder__tab {
+    position: absolute;
+    z-index: 3;
+    left: 0;
+    bottom: 100%;
+    padding: 0.35rem 1.1rem 0.25rem;
+    border-radius: 10px 14px 0 0;
+    background: color-mix(in srgb, var(--c2) 55%, #1e2630);
+    color: color-mix(in srgb, var(--c1) 80%, white);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+
+  .papers {
+    position: absolute;
+    left: 8%;
+    right: 8%;
+    top: -1.5rem;
+    height: 11rem;
+  }
+  .paper {
+    position: absolute;
+    top: 0;
+    width: 44%;
+    height: 9.5rem;
+    overflow: hidden;
+    border-radius: 6px;
+    background: #f3f1ec;
+    box-shadow: 0 6px 18px -6px rgb(0 0 0 / 0.5);
+    transition: transform 500ms var(--ease);
+  }
+  .paper--1 {
+    left: 4%;
+    transform: rotate(-7deg);
+  }
+  .paper--2 {
+    left: 30%;
+    transform: rotate(2deg) translateY(-0.4rem);
+    z-index: 1;
+  }
+  .paper--3 {
+    left: 54%;
+    transform: rotate(8deg);
+  }
+  .folder:hover .paper--1,
+  .folder:focus-visible .paper--1 {
+    transform: rotate(-12deg) translate(-0.8rem, -2.2rem);
+  }
+  .folder:hover .paper--2,
+  .folder:focus-visible .paper--2 {
+    transform: rotate(0deg) translateY(-3rem);
+  }
+  .folder:hover .paper--3,
+  .folder:focus-visible .paper--3 {
+    transform: rotate(13deg) translate(0.8rem, -2.2rem);
+  }
+
+  .paper--logo {
+    display: grid;
+    place-items: start center;
+    padding-top: 1rem;
+    background: #eef1f4;
+  }
+  .paper--shot {
+    background: #1c232c;
+  }
+  .paper--shot :global(img),
+  .paper--shot :global(.cover) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    aspect-ratio: auto;
+  }
+  .paper--doc,
+  .paper--note {
+    display: grid;
+    align-content: start;
+    gap: 0.45rem;
+    padding: 0.7rem;
+  }
+  .doc__band {
+    height: 1.4rem;
+    border-radius: 2px;
+    background: #1f3a5f;
+  }
+  .doc__line {
+    height: 0.35rem;
+    border-radius: 2px;
+    background: #cdd3db;
+  }
+  .doc__line--short {
+    width: 60%;
+  }
+  .paper--note {
+    background: #f6ecd9;
+    padding-top: 1.2rem;
+  }
+  .paper--note .doc__line {
+    background: #d9c3a4;
+  }
+  .paper--pdf {
+    display: grid;
+    place-items: end start;
+    padding: 0.7rem;
+    background: #fff;
+    color: #c0392b;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 0.8rem;
+  }
+
+  .folder__front {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 62%;
+    z-index: 2;
+    display: grid;
+    align-content: end;
+    gap: 0.3rem;
+    padding: 1.1rem 1.3rem 1.2rem;
+    border-radius: 8px 8px 14px 14px;
+    background:
+      linear-gradient(170deg, color-mix(in srgb, var(--c1) 38%, #2b3642), color-mix(in srgb, var(--c2) 40%, #232c37));
+    border-top: 1px solid color-mix(in srgb, var(--c1) 55%, transparent);
+    transform-origin: bottom;
+    transition: transform 500ms var(--ease);
+  }
+  .folder:hover .folder__front,
+  .folder:focus-visible .folder__front {
+    transform: rotateX(-10deg);
+  }
+  .folder__title {
+    font-size: 1.5rem;
+    font-weight: 650;
+    letter-spacing: -0.02em;
+  }
+  .folder__text {
+    color: color-mix(in srgb, var(--text) 85%, transparent);
+    font-size: 0.9rem;
+    line-height: 1.45;
+  }
+  .folder__meta {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.4rem;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: color-mix(in srgb, var(--c1) 70%, white);
+  }
+  .folder__open {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .folder:hover .folder__open :global(.icon) {
+    transform: translateX(3px);
+  }
+  .folder__open :global(.icon) {
+    transition: transform 300ms var(--ease);
+  }
+
+  /* scroll parallax: each folder rises from its own depth, papers slide out of it */
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      .slot {
+        animation: folder-rise linear both;
+        animation-timeline: view();
+        animation-range: entry 0% cover 40%;
+      }
+      .papers {
+        animation: papers-out linear both;
+        animation-timeline: view();
+        animation-range: entry 30% cover 45%;
+      }
+    }
+  }
+  @keyframes folder-rise {
+    from {
+      transform: translateY(var(--depth));
+      opacity: 0;
+    }
+    to {
+      transform: none;
+      opacity: 1;
+    }
+  }
+  @keyframes papers-out {
+    from {
+      transform: translateY(5.5rem);
+    }
+    to {
+      transform: none;
+    }
+  }
+
+  /* ---------- outro ---------- */
+  .outro {
+    margin-top: 7rem;
+    text-align: center;
+  }
+  .outro h2 {
+    font-size: clamp(1.8rem, 4vw, 2.4rem);
+    font-weight: 650;
+    letter-spacing: -0.03em;
+  }
+  .outro p {
+    margin-top: 0.9rem;
+  }
+  .outro .outro__body {
+    margin-top: 0.5rem;
+    color: var(--muted);
+    font-size: 1.05rem;
+  }
+  .outro__mail {
+    display: flex;
+    justify-content: center;
+    font-size: 1.1rem;
+  }
+</style>

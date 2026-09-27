@@ -1,0 +1,43 @@
+---
+// Square project logo: the project's own image, or a monogram tile as fallback.
+import { Image } from 'astro:assets';
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  entry: CollectionEntry<'projects'>;
+  size: number;
+}
+const { entry, size } = Astro.props;
+const { logo, monogram, title } = entry.data;
+---
+
+{
+  logo ? (
+    <Image class="plogo" src={logo} alt="" width={size * 2} height={size * 2} format="webp" style={`width:${size}px;height:${size}px`} />
+  ) : (
+    <span class="plogo plogo--mono" style={`width:${size}px;height:${size}px;font-size:${Math.round(size * 0.34)}px;--mono:${monogram?.color ?? 'var(--blue)'}`} aria-hidden="true">
+      {monogram?.text ?? title.slice(0, 2)}
+    </span>
+  )
+}
+
+<style>
+  .plogo {
+    display: block;
+    flex: none;
+    border-radius: 22%;
+    object-fit: cover;
+  }
+  .plogo--mono {
+    display: grid;
+    place-items: center;
+    background:
+      radial-gradient(circle at 30% 25%, color-mix(in srgb, var(--mono) 35%, transparent), transparent 70%),
+      #1f262f;
+    border: 2px solid color-mix(in srgb, var(--mono) 70%, transparent);
+    color: var(--mono);
+    font-family: var(--font-mono);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+</style>

@@ -1,0 +1,137 @@
+---
+// Social profiles as stacked rows: icon · network · handle · external arrow.
+import { activeSocials, type SocialId } from '../data/site';
+import Github from '@tabler/icons/outline/brand-github.svg';
+import Linkedin from '@tabler/icons/outline/brand-linkedin.svg';
+import Itch from '@tabler/icons/outline/brand-itch.svg';
+import Steam from '@tabler/icons/outline/brand-steam.svg';
+import Instagram from '@tabler/icons/outline/brand-instagram.svg';
+import External from '@tabler/icons/outline/external-link.svg';
+
+const icons: Record<SocialId, typeof Github> = {
+  github: Github,
+  linkedin: Linkedin,
+  itch: Itch,
+  steam: Steam,
+  instagram: Instagram,
+};
+---
+
+<ul class="socials">
+  {
+    activeSocials.map((s) => {
+      const Icon = icons[s.id];
+      return (
+        <li>
+          <a href={s.url} rel="me noopener" target="_blank">
+            <Icon class="socials__icon" aria-hidden="true" />
+            <span class="socials__text">
+              <span class="socials__label">{s.label}</span>
+              <span class="socials__handle">{s.handle}</span>
+            </span>
+            <External class="socials__ext" aria-hidden="true" />
+          </a>
+        </li>
+      );
+    })
+  }
+</ul>
+
+<style>
+  /* Up to three per row; a short last row stretches to fill it.
+     Grid of 6 (or 4) tracks: normal cards span 2, leftovers span more. */
+  .socials {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  /* phones and tablets: pairs, the odd one out takes the whole last row */
+  .socials li {
+    grid-column: span 2;
+  }
+  .socials li:last-child:nth-child(2n + 1) {
+    grid-column: span 4;
+  }
+  @media (min-width: 900px) {
+    .socials {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+    .socials li,
+    .socials li:last-child:nth-child(2n + 1) {
+      grid-column: span 2;
+    }
+    /* last row of two: each takes half the row */
+    .socials li:nth-child(3n + 1):nth-last-child(2),
+    .socials li:nth-child(3n + 2):last-child {
+      grid-column: span 3;
+    }
+    /* last row of one: full width */
+    .socials li:nth-child(3n + 1):last-child {
+      grid-column: span 6;
+    }
+  }
+  .socials li {
+    display: flex;
+  }
+  .socials a {
+    width: 100%;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 0.65rem;
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--surface) 55%, transparent);
+    color: var(--text);
+    text-decoration: none;
+    transition:
+      border-color 180ms,
+      background 180ms,
+      transform 260ms var(--ease);
+  }
+  .socials__text {
+    display: grid;
+    min-width: 0;
+    line-height: 1.25;
+  }
+  .socials a:hover {
+    border-color: color-mix(in srgb, var(--blue) 60%, transparent);
+    background: var(--surface);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .socials a:hover {
+      transform: translateY(-2px);
+    }
+  }
+  .socials__icon {
+    width: 1.15rem;
+    height: 1.15rem;
+    color: var(--blue);
+  }
+  .socials__label {
+    font-size: 0.82rem;
+    font-weight: 500;
+  }
+  .socials__handle {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+  }
+  .socials__ext {
+    align-self: start;
+    width: 0.8rem;
+    height: 0.8rem;
+    color: var(--muted);
+    transition: color 180ms;
+  }
+  .socials a:hover .socials__ext {
+    color: var(--blue);
+  }
+</style>

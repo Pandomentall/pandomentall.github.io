@@ -1,0 +1,43 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  # Daily rebuild keeps GitHub data (releases, downloads, READMEs) fresh.
+  schedule:
+    - cron: '17 4 * * *'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install, build (site + CV PDFs) and upload
+        uses: withastro/action@v6
+        env:
+          # Detail pages pull repo facts and READMEs from the GitHub API (src/lib/github.ts).
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # Chromium is needed by scripts/build-cv-pdf.mjs
+          build-cmd: npx playwright install --with-deps chromium && npm run build
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

@@ -1,0 +1,37 @@
+---
+// Blog placeholder (v1). Posts will carry their own zone (game/tech) once they exist.
+import Base from '../layouts/Base.astro';
+import { pathFor, t, type Lang } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+  route: 'blog';
+}
+const { lang, route } = Astro.props;
+---
+
+<Base lang={lang} route={route} zone="cv" title={`${t(lang, 'blog.title')} — Ender Aygün`} description={t(lang, 'blog.lead')}>
+  <div class="container soon">
+    <p class="label">{t(lang, 'soon.title')}</p>
+    <h1>{t(lang, 'blog.title')}</h1>
+    <p class="soon__body">{t(lang, 'blog.lead')}</p>
+    <a class="btn" href={pathFor('cv', lang)}>{t(lang, 'soon.back')}</a>
+  </div>
+</Base>
+
+<style>
+  .soon {
+    padding-block: 5rem 2rem;
+  }
+  .soon h1 {
+    font-size: 2.2rem;
+    font-weight: 650;
+    letter-spacing: -0.03em;
+    margin: 0.3rem 0 0.75rem;
+  }
+  .soon__body {
+    color: var(--muted);
+    max-width: 34rem;
+    margin-bottom: 1.5rem;
+  }
+</style>

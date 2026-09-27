@@ -1,0 +1,634 @@
+---
+// Detail page shared by projects (tech zone) and games (game zone):
+// hero · facts · links · our description · team · gallery · GitHub README · related posts · prev/next.
+import { Image, getImage } from 'astro:assets';
+import { render } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import ProjectLogo from './ProjectLogo.astro';
+import GameArt from './GameArt.astro';
+import ArrowLeft from '@tabler/icons/outline/arrow-left.svg';
+import ArrowRight from '@tabler/icons/outline/arrow-right.svg';
+import Github from '@tabler/icons/outline/brand-github.svg';
+import Download from '@tabler/icons/outline/download.svg';
+import World from '@tabler/icons/outline/world.svg';
+import Itch from '@tabler/icons/outline/brand-itch.svg';
+import Steam from '@tabler/icons/outline/brand-steam.svg';
+import { getReadmeHtml, getRepo } from '../lib/github';
+import { postsAbout, slugOf, type Work, type WorkKind } from '../lib/works';
+import { pathFor, t, type Lang } from '../i18n/ui';
+
+interface Props {
+  kind: WorkKind;
+  lang: Lang;
+  entry: Work;
+  prev: Work | null;
+  next: Work | null;
+}
+const { kind, lang, entry, prev, next } = Astro.props;
+const d = entry.data;
+const slug = slugOf(entry);
+const isGame = kind === 'games';
+const game = isGame ? (entry as Extract<Work, { collection: 'games' }>) : null;
+const project = isGame ? null : (entry as Extract<Work, { collection: 'projects' }>);
+
+const { Content } = await render(entry);
+const repo = d.repo ? await getRepo(d.repo) : null;
+const readme = d.repo && d.readme ? await getReadmeHtml(d.repo, d.readme) : null;
+const posts = await postsAbout(slug, lang);
+
+const locale = lang === 'tr' ? 'tr-TR' : 'en-GB';
+const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(locale, { year: 'numeric', month: 'short' });
+
+const facts: [string, string][] = [];
+if (game) {
+  facts.push([t(lang, 'fact.genre'), game.data.genre]);
+  if (game.data.engine) facts.push([t(lang, 'fact.engine'), game.data.engine]);
+  if (game.data.platforms.length) facts.push([t(lang, 'fact.platforms'), game.data.platforms.join(', ')]);
+  if (game.data.jam) facts.push([t(lang, 'fact.jam'), game.data.jam]);
+} else if (project) {
+  facts.push([t(lang, 'fact.kind'), t(lang, `kind.${project.data.kind}`)]);
+}
+if (repo?.license) facts.push([t(lang, 'fact.license'), repo.license]);
+if (repo?.release) facts.push([t(lang, 'fact.release'), `${repo.release.tag} · ${fmtDate(repo.release.date)}`]);
+if (repo?.release && repo.release.downloads > 0)
+  facts.push([t(lang, 'fact.downloads'), repo.release.downloads.toLocaleString(locale)]);
+if (repo?.language) facts.push([t(lang, 'fact.language'), repo.language]);
+
+const links = [
+  d.links.itch && { href: d.links.itch, label: t(lang, 'detail.itch'), Icon: Itch, primary: true },
+  d.links.download && { href: d.links.download, label: t(lang, 'detail.download'), Icon: Download, primary: true },
+  d.links.steam && { href: d.links.steam, label: t(lang, 'detail.steam'), Icon: Steam, primary: false },
+  (d.links.repo ?? repo?.url) && { href: d.links.repo ?? repo!.url, label: t(lang, 'detail.repo'), Icon: Github, primary: false },
+  d.links.site && { href: d.links.site, label: t(lang, 'detail.site'), Icon: World, primary: false },
+].filter(Boolean) as { href: string; label: string; Icon: typeof Github; primary: boolean }[];
+
+// Full-size versions for the gallery links (opened in a new tab).
+const gallery = await Promise.all(
+  d.gallery.map(async (g) => ({ ...g, full: (await getImage({ src: g.src, width: 1600, format: 'webp' })).src })),
+);
+
+const route = isGame ? 'games' : 'projects';
+const accent = game ? `--a1:${game.data.accent[0]};--a2:${game.data.accent[1]}` : '';
+---
+
+<Base
+  lang={lang}
+  route={route}
+  item={slug}
+  zone={isGame ? 'game' : 'tech'}
+  backdrop={game?.data.backdrop === 'parlamonium' ? 'parlamonium' : undefined}
+  title={`${d.title} — Ender Aygün`}
+  description={d.summary}
+>
+  <article class:list={['container', 'detail', isGame ? 'detail--game' : 'detail--tech']} style={accent}>
+    <a class="back" href={pathFor(route, lang)}>
+      <ArrowLeft class="icon" aria-hidden="true" />
+      {t(lang, isGame ? 'detail.back.games' : 'detail.back.projects')}
+    </a>
+
+    <header class="hero">
+      {
+        game && (
+          <div class="hero__media">
+            {game.data.thumb ? (
+              <Image src={game.data.thumb} alt="" width={1200} format="webp" quality={80} loading="eager" />
+            ) : game.data.art ? (
+              <GameArt id={game.data.art} />
+            ) : null}
+          </div>
+        )
+      }
+      <div class="hero__id">
+        {project && <ProjectLogo entry={project} size={84} />}
+        <div>
+          <p class="hero__status">
+            {t(lang, `status.${d.status}`)}
+            {d.award && <span class="hero__award">★ {d.award}</span>}
+          </p>
+          <h1>{d.title}</h1>
+          <p class="hero__summary">{d.summary}</p>
+        </div>
+      </div>
+      {
+        links.length > 0 && (
+          <p class="actions">
+            {links.map((l) => (
+              <a class:list={['btn', { 'btn--accent': l.primary }]} href={l.href} target="_blank" rel="noopener">
+                <l.Icon class="icon" aria-hidden="true" />
+                {l.label}
+              </a>
+            ))}
+          </p>
+        )
+      }
+    </header>
+
+    {
+      facts.length > 0 && (
+        <dl class="facts">
+          {facts.map(([k, v]) => (
+            <div>
+              <dt>{k}</dt>
+              <dd>{v}</dd>
+            </div>
+          ))}
+        </dl>
+      )
+    }
+
+    <section class="block" aria-labelledby="about-h">
+      <h2 id="about-h">{t(lang, 'detail.about')}</h2>
+      <div class="prose"><Content /></div>
+      {
+        d.tags.length > 0 && (
+          <p class="tags">
+            {d.tags.map((tag) => (
+              <span class="chip">{tag}</span>
+            ))}
+          </p>
+        )
+      }
+    </section>
+
+    {
+      d.team.length > 0 && (
+        <section class="block" aria-labelledby="team-h">
+          <h2 id="team-h">{t(lang, 'detail.team')}</h2>
+          <ul class="team">
+            {d.team.map((m) => (
+              <li>
+                <strong>{m.name}</strong>
+                <span>{m.role}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    {
+      gallery.length > 0 && (
+        <section class="block" aria-labelledby="gallery-h">
+          <h2 id="gallery-h">{t(lang, 'detail.gallery')}</h2>
+          <ul class="gallery">
+            {gallery.map((g) => (
+              <li>
+                <a href={g.full} target="_blank" rel="noopener">
+                  <Image src={g.src} alt={g.alt} width={640} format="webp" quality={78} />
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    {
+      readme && (
+        <section class="block" aria-labelledby="readme-h">
+          <h2 id="readme-h">
+            <Github class="icon" aria-hidden="true" /> {t(lang, 'detail.readme')}
+          </h2>
+          {d.readmeLang && d.readmeLang !== lang && <p class="note">{t(lang, 'detail.readmeOtherLang')}</p>}
+          <div class="readme-wrap">
+            <div class="prose readme" lang={d.readmeLang ?? lang} set:html={readme} />
+            <button class="btn readme-more" type="button" hidden data-less={t(lang, 'detail.readmeLess')}>
+              {t(lang, 'detail.readmeMore')}
+            </button>
+          </div>
+        </section>
+      )
+    }
+
+    {
+      posts.length > 0 && (
+        <section class="block" aria-labelledby="posts-h">
+          <h2 id="posts-h">{t(lang, 'detail.posts')}</h2>
+          <ul class="posts">
+            {posts.map((p) => (
+              <li>
+                <a href={`${lang === 'tr' ? '' : '/en'}/blog/${p.id.split('/').pop()}`}>{p.data.title}</a>
+                <span>{p.data.date.toLocaleDateString(locale)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    <nav class="pager" aria-label={lang === 'tr' ? 'Önceki ve sonraki' : 'Previous and next'}>
+      {
+        prev ? (
+          <a class="pager__link" href={pathFor(route, lang, slugOf(prev))} rel="prev">
+            <ArrowLeft class="icon" aria-hidden="true" />
+            <span>
+              <span class="pager__dir">{t(lang, 'detail.prev')}</span>
+              <span class="pager__title">{prev.data.title}</span>
+            </span>
+          </a>
+        ) : (
+          <span />
+        )
+      }
+      {
+        next && (
+          <a class="pager__link pager__link--next" href={pathFor(route, lang, slugOf(next))} rel="next">
+            <span>
+              <span class="pager__dir">{t(lang, 'detail.next')}</span>
+              <span class="pager__title">{next.data.title}</span>
+            </span>
+            <ArrowRight class="icon" aria-hidden="true" />
+          </a>
+        )
+      }
+    </nav>
+  </article>
+</Base>
+
+<script>
+  // Long READMEs start collapsed (with a fade); without JS they are simply shown in full.
+  for (const wrap of document.querySelectorAll<HTMLElement>('.readme-wrap')) {
+    const body = wrap.querySelector<HTMLElement>('.readme')!;
+    const btn = wrap.querySelector<HTMLButtonElement>('.readme-more')!;
+    if (body.scrollHeight < 900) continue;
+    wrap.classList.add('is-collapsed');
+    btn.hidden = false;
+    const more = btn.textContent ?? '';
+    btn.addEventListener('click', () => {
+      const collapsed = wrap.classList.toggle('is-collapsed');
+      btn.textContent = collapsed ? more : (btn.dataset.less ?? '');
+      if (collapsed) wrap.scrollIntoView({ block: 'start' });
+    });
+  }
+</script>
+
+<style>
+  .detail {
+    padding-top: 2rem;
+    --content: 52rem;
+  }
+  .back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--muted);
+    font-size: 0.88rem;
+    text-decoration: none;
+  }
+  .back:hover {
+    color: var(--blue);
+  }
+
+  /* hero */
+  .hero {
+    display: grid;
+    gap: 1.25rem;
+    margin-top: 1.5rem;
+  }
+  .hero__media {
+    aspect-ratio: 21 / 9;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--a1) 45%, var(--border));
+    box-shadow:
+      0 0 40px -12px color-mix(in srgb, var(--a1) 50%, transparent),
+      inset 0 0 0 1px color-mix(in srgb, var(--a2) 15%, transparent);
+    background: #1c232c;
+  }
+  .hero__media :global(img),
+  .hero__media :global(.cover) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    aspect-ratio: auto;
+  }
+  .hero__id {
+    display: flex;
+    align-items: center;
+    gap: 1.1rem;
+  }
+  .hero__status {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--sage);
+  }
+  .hero__award {
+    margin-left: 0.9rem;
+    color: var(--gold);
+  }
+  .detail--game .hero__status {
+    color: var(--a1);
+  }
+  .hero h1 {
+    margin: 0.15rem 0 0.35rem;
+    font-size: clamp(1.8rem, 5vw, 2.4rem);
+    font-weight: 650;
+    letter-spacing: -0.03em;
+  }
+  .detail--game .hero h1 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: 0;
+  }
+  .hero__summary {
+    color: var(--muted);
+    max-width: 40rem;
+  }
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .detail--tech .btn {
+    border-radius: var(--radius);
+  }
+  .detail--game .btn--accent {
+    background: var(--a1);
+    border-color: var(--a1);
+    color: #1b2129;
+  }
+  .detail--game .btn--accent:hover {
+    filter: brightness(1.1);
+  }
+
+  /* facts */
+  .facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+    margin: 2rem 0 0;
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--bg) 70%, transparent);
+    overflow: hidden;
+  }
+  .facts div {
+    padding: 0.65rem 0.85rem;
+    border-right: 1px solid var(--border-soft);
+    border-bottom: 1px solid var(--border-soft);
+    margin: 0 -1px -1px 0;
+  }
+  .facts dt {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+  .facts dd {
+    margin: 0.1rem 0 0;
+    font-size: 0.9rem;
+  }
+
+  /* blocks */
+  .block {
+    margin-top: 2.75rem;
+  }
+  .block h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    font-size: 1.15rem;
+    font-weight: 600;
+  }
+  .detail--game .block h2 {
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--a1);
+  }
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 1rem;
+  }
+  .note {
+    margin: -0.4rem 0 1rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+
+  .team {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .team li {
+    display: grid;
+    padding: 0.65rem 0.85rem;
+    border: 1px solid var(--border-soft);
+    border-left: 3px solid var(--a1, var(--blue));
+    background: color-mix(in srgb, var(--surface) 60%, transparent);
+  }
+  .team span {
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+
+  .gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+    gap: 0.6rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .gallery a {
+    display: block;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius);
+    background: #1c232c;
+  }
+  .gallery :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 0;
+    transition: transform 500ms var(--ease);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .gallery a:hover :global(img) {
+      transform: scale(1.04);
+    }
+  }
+
+  .posts {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .posts li {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .posts span {
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+  }
+
+  /* prose: our description + the README */
+  .prose {
+    max-width: 44rem;
+    color: var(--text);
+  }
+  .prose :global(p),
+  .prose :global(ul),
+  .prose :global(ol),
+  .prose :global(blockquote),
+  .prose :global(table),
+  .prose :global(pre) {
+    margin: 0 0 1rem;
+  }
+  .prose :global(h2),
+  .prose :global(h3) {
+    margin: 2rem 0 0.75rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0;
+    font-family: var(--font);
+    color: var(--text);
+  }
+  .prose :global(h3) {
+    font-size: 1rem;
+  }
+  .prose :global(img) {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+  }
+  .prose :global(li + li) {
+    margin-top: 0.3rem;
+  }
+  .prose :global(blockquote) {
+    padding: 0.6rem 1rem;
+    border-left: 3px solid var(--sand);
+    background: color-mix(in srgb, var(--surface) 60%, transparent);
+    color: var(--muted);
+  }
+  .prose :global(blockquote p:last-child) {
+    margin: 0;
+  }
+  .prose :global(code) {
+    padding: 0.1rem 0.35rem;
+    border-radius: 5px;
+    background: var(--surface);
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+  }
+  .prose :global(pre) {
+    padding: 0.9rem 1rem;
+    border-radius: var(--radius);
+    background: #232b35;
+    overflow-x: auto;
+  }
+  .prose :global(pre code) {
+    padding: 0;
+    background: none;
+  }
+  .prose :global(table) {
+    display: block;
+    overflow-x: auto;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  .prose :global(th),
+  .prose :global(td) {
+    padding: 0.4rem 0.7rem;
+    border: 1px solid var(--border-soft);
+    text-align: left;
+  }
+  .prose :global(hr) {
+    border: 0;
+    border-top: 1px solid var(--border-soft);
+    margin: 2rem 0;
+  }
+  .readme {
+    padding: 1.25rem 1.4rem;
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--bg) 80%, transparent);
+    max-width: none;
+    font-size: 0.95rem;
+  }
+  .readme-wrap {
+    position: relative;
+  }
+  .readme-wrap.is-collapsed .readme {
+    max-height: 40rem;
+    overflow: hidden;
+    mask-image: linear-gradient(to bottom, #000 70%, transparent);
+  }
+  .readme-more {
+    display: flex;
+    margin: 0.9rem auto 0;
+  }
+  .readme-more[hidden] {
+    display: none;
+  }
+  .readme :global(> :first-child) {
+    margin-top: 0;
+  }
+  /* README badge rows: keep shields inline */
+  .readme :global(p a img[src*='shields.io']) {
+    display: inline-block;
+    border-radius: 3px;
+    margin: 0 0.15rem;
+  }
+
+  /* prev / next */
+  .pager {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-top: 3.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-soft);
+  }
+  .pager__link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius);
+    color: var(--text);
+    text-decoration: none;
+    transition:
+      border-color 180ms,
+      background 180ms;
+  }
+  .pager__link:hover {
+    border-color: var(--a1, var(--blue));
+    background: color-mix(in srgb, var(--surface) 70%, transparent);
+  }
+  .pager__link--next {
+    grid-column: 2;
+    justify-content: flex-end;
+    text-align: right;
+  }
+  .pager__link > span {
+    display: grid;
+    min-width: 0;
+  }
+  .pager__dir {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+  .pager__title {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+</style>

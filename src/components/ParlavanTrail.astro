@@ -1,0 +1,124 @@
+---
+// Game-zone header line: a row of Parlamonium shards with a Parlavan walking along it,
+// eating them; shards grow back behind it. Pac-Man homage, Ellam's own creature.
+// Easter egg: the Konami code releases a small swarm for a while.
+// Reduced motion: shards and one resting Parlavan, nothing moves.
+---
+
+<canvas class="trail" aria-hidden="true"></canvas>
+
+<script>
+  import { SPRITE_H, SPRITE_W, drawParlavan, fitCanvas, reducedMotion } from '../scripts/parlavan';
+
+  const canvas = document.querySelector<HTMLCanvasElement>('.trail');
+  if (canvas) start(canvas);
+
+  function start(canvas: HTMLCanvasElement) {
+    const SCALE = 3;
+    const GAP = 20; // px between shards
+    const REGROW = 7000; // ms until an eaten shard is back
+    const bodyW = SPRITE_W * SCALE;
+    const bodyH = SPRITE_H * SCALE;
+
+    type Shard = { x: number; purple: boolean; eatenAt: number };
+    type Bug = { x: number; speed: number; frame: 0 | 1; nextFlip: number; until: number };
+
+    let ctx = fitCanvas(canvas);
+    let w = canvas.clientWidth;
+    let h = canvas.clientHeight;
+    let shards: Shard[] = [];
+    const bugs: Bug[] = [{ x: -bodyW, speed: 38, frame: 0, nextFlip: 0, until: Infinity }];
+
+    const layout = () => {
+      ctx = fitCanvas(canvas);
+      w = canvas.clientWidth;
+      h = canvas.clientHeight;
+      shards = Array.from({ length: Math.ceil(w / GAP) }, (_, i) => ({
+        x: i * GAP + GAP / 2,
+        purple: i % 7 === 3,
+        eatenAt: -Infinity,
+      }));
+    };
+
+    const draw = (now: number) => {
+      ctx.clearRect(0, 0, w, h);
+      const mid = Math.round(h / 2);
+      for (const s of shards) {
+        const age = now - s.eatenAt;
+        if (age < REGROW) continue;
+        const grow = Math.min(1, (age - REGROW) / 600); // fade back in
+        ctx.globalAlpha = 0.85 * grow;
+        ctx.fillStyle = s.purple ? '#b9a2f5' : '#f2c572';
+        // 6px diamond
+        ctx.fillRect(s.x - 1, mid - 3, 2, 6);
+        ctx.fillRect(s.x - 3, mid - 1, 6, 2);
+      }
+      ctx.globalAlpha = 1;
+      for (const b of bugs) drawParlavan(ctx, b.frame, b.x, mid - bodyH / 2 - 1, SCALE);
+    };
+
+    layout();
+    addEventListener('resize', layout);
+
+    if (reducedMotion()) {
+      bugs[0].x = 12;
+      draw(performance.now());
+      return;
+    }
+
+    let last = performance.now();
+    const tick = (now: number) => {
+      const dt = Math.min(0.05, (now - last) / 1000);
+      last = now;
+      for (let i = bugs.length - 1; i >= 0; i--) {
+        const b = bugs[i];
+        if (now > b.until && b.x > w) {
+          bugs.splice(i, 1);
+          continue;
+        }
+        b.x += b.speed * dt;
+        if (b.x > w + bodyW && b.until === Infinity) b.x = -bodyW - 40;
+        const mouth = b.x + bodyW - 4;
+        let chewing = false;
+        for (const s of shards) {
+          if (s.x > mouth - 6 && s.x < mouth + 2 && now - s.eatenAt > REGROW) {
+            s.eatenAt = now;
+            chewing = true;
+          }
+        }
+        if (chewing || now > b.nextFlip) {
+          b.frame = b.frame === 0 ? 1 : 0;
+          b.nextFlip = now + (chewing ? 120 : 260);
+        }
+      }
+      draw(now);
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+
+    // ↑ ↑ ↓ ↓ ← → ← → B A
+    const code = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+    let pos = 0;
+    addEventListener('keydown', (e) => {
+      pos = e.key.toLowerCase() === code[pos].toLowerCase() ? pos + 1 : e.key === code[0] ? 1 : 0;
+      if (pos < code.length) return;
+      pos = 0;
+      const until = performance.now() + 14000;
+      for (let i = 0; i < 6; i++) {
+        bugs.push({ x: -bodyW - i * 64, speed: 70 + Math.random() * 40, frame: 0, nextFlip: 0, until });
+      }
+    });
+  }
+</script>
+
+<style>
+  .trail {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -16px;
+    width: 100%;
+    height: 32px;
+    pointer-events: none;
+  }
+</style>
