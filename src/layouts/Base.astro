@@ -19,6 +19,7 @@ import ParlamoniumRain from '../components/backdrops/ParlamoniumRain.astro';
 import Workbench from '../components/backdrops/Workbench.astro';
 import GameGrid from '../components/backdrops/GameGrid.astro';
 import { site } from '../data/site';
+import { personGraph } from '../lib/seo';
 import { hourlyStatus } from '../data/status';
 import { other, pathFor, t, type Lang, type RouteKey } from '../i18n/ui';
 
@@ -50,6 +51,7 @@ const nav: { key: RouteKey; label: string; zone: Zone }[] = [
 ];
 const abs = (path: string) => new URL(path, site.url).href;
 const canonical = route ? abs(pathFor(route, lang, item)) : undefined;
+const jsonLd = route === 'home' || route === 'cv' ? await personGraph(lang, route) : null;
 const ogImage = abs(`/og/cv-${lang}.png`);
 ---
 
@@ -60,6 +62,8 @@ const ogImage = abs(`/og/cv-${lang}.png`);
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content={zone === 'game' ? '#232940' : zone === 'tech' ? '#34414f' : '#2e3844'} />
     <title>{title}</title>
+    {site.googleVerification && <meta name="google-site-verification" content={site.googleVerification} />}
+    {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
     <meta name="description" content={description} />
     {noindex && <meta name="robots" content="noindex" />}
     {canonical && <link rel="canonical" href={canonical} />}

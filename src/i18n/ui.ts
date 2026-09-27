@@ -26,8 +26,9 @@ export type RouteKey = keyof typeof routes;
 export function pathFor(key: RouteKey, lang: Lang, item?: string): string {
   const base = routes[key][lang];
   const path = item ? `${base}/${item}` : base;
-  if (!path) return lang === defaultLang ? '/' : `/${lang}`;
-  return lang === defaultLang ? `/${path}` : `/${lang}/${path}`;
+  // Always end with "/": GitHub Pages serves /cv/ and 301-redirects /cv.
+  if (!path) return lang === defaultLang ? '/' : `/${lang}/`;
+  return lang === defaultLang ? `/${path}/` : `/${lang}/${path}/`;
 }
 
 export const ui = {
@@ -39,7 +40,7 @@ export const ui = {
   'nav.skip': { tr: 'İçeriğe geç', en: 'Skip to content' },
   'lang.switchLabel': { tr: 'Sayfanın İngilizce sürümü', en: 'Turkish version of this page' },
 
-  'cv.pageTitle': { tr: 'Ender Aygün — CV', en: 'Ender Aygün — CV' },
+  'cv.pageTitle': { tr: 'Ender Aygün | CV', en: 'Ender Aygün | CV' },
   'cv.description': {
     tr: 'Ender Aygün: yazılım ve oyun geliştirici. İş deneyimi, projeler, eğitim.',
     en: 'Ender Aygün: software and game developer. Experience, projects, education.',
@@ -56,7 +57,7 @@ export const ui = {
   'soon.title': { tr: 'Yakında', en: 'Coming soon' },
   'soon.back': { tr: 'CV sayfasına dön', en: 'Back to the CV' },
 
-  'home.title': { tr: 'Ender Aygün — Yazılım ve oyun', en: 'Ender Aygün — Software and games' },
+  'home.title': { tr: 'Ender Aygün | Yazılım ve Oyun Geliştirici', en: 'Ender Aygün | Software and Game Developer' },
   'home.description': {
     tr: 'Ender Aygün: yazılım ve oyun geliştirici. CV, projeler, oyunlar ve yazılar.',
     en: 'Ender Aygün: software and game developer. CV, projects, games and writing.',

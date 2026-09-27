@@ -4,6 +4,8 @@
 export const site = {
   name: 'Ender Aygün',
   url: 'https://pandomentall.github.io',
+  // Google Search Console "HTML tag" verification token (content="..."), empty = no tag.
+  googleVerification: '',
 };
 
 // Email is stored in parts and assembled client-side, so the full address
