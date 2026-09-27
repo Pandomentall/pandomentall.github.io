@@ -150,7 +150,8 @@ export const ui = {
   },
 
   'footer.contact': { tr: 'İletişim', en: 'Contact' },
-  'footer.clock': { tr: 'Bandırma’da saat şu an', en: 'Right now in Bandırma it is' },
+  'footer.now': { tr: 'Şu anda:', en: 'Right now:' },
+  'footer.clock': { tr: 'Bandırma’da saat', en: 'Time in Bandırma' },
 } satisfies Record<string, L>;
 export type UiKey = keyof typeof ui;
 

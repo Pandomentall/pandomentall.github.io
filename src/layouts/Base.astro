@@ -156,6 +156,7 @@ const ogImage = abs(`/og/cv-${lang}.png`);
             <CloudStorm data-icon="storm" />
           </template>
           <p class="site-footer__status" data-status hidden>
+            <span class="site-footer__now">{t(lang, 'footer.now')}</span>
             <span class="site-footer__sdot" aria-hidden="true"></span>
             <span>
               <span data-status-text></span>{' '}
@@ -494,6 +495,14 @@ const ogImage = abs(`/og/cv-${lang}.png`);
   }
   .site-footer__status[hidden] {
     display: none;
+  }
+  .site-footer__now {
+    grid-column: 1 / -1;
+    margin-top: 0.5rem;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.03em;
   }
   .site-footer__since {
     color: var(--muted);
