@@ -57,7 +57,7 @@ export const ui = {
   'soon.title': { tr: 'Yakında', en: 'Coming soon' },
   'soon.back': { tr: 'CV sayfasına dön', en: 'Back to the CV' },
 
-  'home.title': { tr: 'Ender Aygün | Yazılım ve Oyun Geliştirici', en: 'Ender Aygün | Software and Game Developer' },
+  'home.title': { tr: 'Ender Aygün - Yazılım Geliştiricisi', en: 'Ender Aygün - Software Developer' },
   'home.description': {
     tr: 'Ender Aygün: yazılım ve oyun geliştirici. CV, projeler, oyunlar ve yazılar.',
     en: 'Ender Aygün: software and game developer. CV, projects, games and writing.',
