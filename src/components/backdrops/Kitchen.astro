@@ -1,11 +1,11 @@
 ---
 // Let Him Cook detail backdrop: a warm kitchen at night. Stove heat glowing up from the
-// bottom edge, a faint gingham tablecloth (the game's pie table) fading in from below, and
+// bottom edge, soft steam puffs rising from it, widening and thinning out by mid-screen, and
 // embers rising slowly, fading as they climb. Very translucent; reduced motion: one still frame.
+// (A gingham tablecloth layer was tried first; Ender found the grid distracting, removed.)
 ---
 
 <div class="backdrop kitchen" aria-hidden="true">
-  <div class="kitchen__cloth"></div>
   <div class="kitchen__heat"></div>
   <canvas class="kitchen__canvas"></canvas>
 </div>
@@ -18,12 +18,14 @@
 
   function start(canvas: HTMLCanvasElement) {
     type Ember = { x: number; y: number; vy: number; sway: number; phase: number; r: number; life: number; age: number; gold: boolean };
+    type Puff = { x: number; y: number; vy: number; sway: number; phase: number; r: number; life: number; age: number };
     let ctx = fitCanvas(canvas);
     let w = canvas.clientWidth;
     let h = canvas.clientHeight;
     let embers: Ember[] = [];
+    let steam: Puff[] = [];
 
-    const spawn = (anywhere: boolean): Ember => {
+    const spawnEmber = (anywhere: boolean): Ember => {
       const life = 9 + Math.random() * 10;
       return {
         x: Math.random() * w,
@@ -38,15 +40,47 @@
       };
     };
 
+    const spawnPuff = (anywhere: boolean): Puff => {
+      const life = 12 + Math.random() * 8;
+      const r = 40 + Math.random() * 50;
+      return {
+        x: Math.random() * w,
+        y: h + r * 0.4,
+        vy: 16 + Math.random() * 14,
+        sway: 20 + Math.random() * 30,
+        phase: Math.random() * 6.3,
+        r,
+        life,
+        age: anywhere ? Math.random() * life : 0,
+      };
+    };
+
     const reset = () => {
       ctx = fitCanvas(canvas);
       w = canvas.clientWidth;
       h = canvas.clientHeight;
-      embers = Array.from({ length: Math.min(60, Math.round((w * h) / 20000)) }, () => spawn(true));
+      embers = Array.from({ length: Math.min(60, Math.round((w * h) / 20000)) }, () => spawnEmber(true));
+      steam = Array.from({ length: Math.min(16, Math.max(5, Math.round(w / 90))) }, () => {
+        const p = spawnPuff(true);
+        p.y -= p.vy * p.age; // already on its way up
+        return p;
+      });
     };
 
     const draw = () => {
       ctx.clearRect(0, 0, w, h);
+      for (const p of steam) {
+        const k = p.age / p.life;
+        const a = Math.sin(Math.PI * k) * 0.05;
+        if (a <= 0.003) continue;
+        const r = p.r * (1 + 1.6 * k); // widens as it rises
+        const x = p.x + Math.sin(p.age * 0.35 + p.phase) * p.sway;
+        const g = ctx.createRadialGradient(x, p.y, 0, x, p.y, r);
+        g.addColorStop(0, `rgba(232,228,220,${a.toFixed(3)})`);
+        g.addColorStop(1, 'rgba(232,228,220,0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(x - r, p.y - r, r * 2, r * 2);
+      }
       for (const e of embers) {
         // bright near the stove, gone by the time it reaches the top
         const a = Math.sin((Math.PI * e.age) / e.life) * (0.15 + 0.5 * (e.y / h));
@@ -75,7 +109,13 @@
         const e = embers[i];
         e.age += dt;
         e.y -= e.vy * dt;
-        if (e.age > e.life || e.y < -10) embers[i] = spawn(false);
+        if (e.age > e.life || e.y < -10) embers[i] = spawnEmber(false);
+      }
+      for (let i = 0; i < steam.length; i++) {
+        const p = steam[i];
+        p.age += dt;
+        p.y -= p.vy * dt;
+        if (p.age > p.life) steam[i] = spawnPuff(false);
       }
       draw();
       requestAnimationFrame(tick);
@@ -90,19 +130,6 @@
     inset: 0;
     width: 100%;
     height: 100%;
-  }
-  .kitchen__cloth {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 46vh;
-    /* same tint both ways so it reads as gingham, not stripes; long soft fade, no band edge */
-    background-image:
-      linear-gradient(90deg, rgb(233 150 120 / 0.05) 50%, transparent 50%),
-      linear-gradient(rgb(233 150 120 / 0.05) 50%, transparent 50%);
-    background-size: 44px 44px;
-    mask-image: linear-gradient(to top, #000 0%, rgb(0 0 0 / 0.35) 45%, transparent 100%);
   }
   .kitchen__heat {
     position: absolute;
