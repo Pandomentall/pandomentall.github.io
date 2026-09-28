@@ -23,6 +23,7 @@ gallery:
   - { src: ./shot-3.png, alt: Pişen turtalar }
   - { src: ./shot-4.png, alt: Tepsiye dizilmiş ürünler }
 fx: flame
+backdrop: kitchen
 ---
 
 Let Him Cook, çoklu görev becerini zorlayan bir arcade oyunu. Farklı boyutlara, pişme sürelerine ve puan değerlerine sahip yemekler rastgele sıraya diziliyor; amacın sıra dolup taşmadan hepsini doğru pişirip göndermek.

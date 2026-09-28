@@ -19,6 +19,7 @@ team:
   - { name: Baturay Bostancı, role: Digital artist }
   - { name: Caner Ataysın, role: Music and sound effects }
 fx: stars
+backdrop: orbit
 award: 2nd place at the jam
 ---
 

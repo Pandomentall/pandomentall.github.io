@@ -1,0 +1,124 @@
+---
+// Let Him Cook detail backdrop: a warm kitchen at night. Stove heat glowing up from the
+// bottom edge, a faint gingham tablecloth (the game's pie table) fading in from below, and
+// embers rising slowly, fading as they climb. Very translucent; reduced motion: one still frame.
+---
+
+<div class="backdrop kitchen" aria-hidden="true">
+  <div class="kitchen__cloth"></div>
+  <div class="kitchen__heat"></div>
+  <canvas class="kitchen__canvas"></canvas>
+</div>
+
+<script>
+  import { fitCanvas, reducedMotion } from '../../scripts/parlavan';
+
+  const canvas = document.querySelector<HTMLCanvasElement>('.kitchen__canvas');
+  if (canvas) start(canvas);
+
+  function start(canvas: HTMLCanvasElement) {
+    type Ember = { x: number; y: number; vy: number; sway: number; phase: number; r: number; life: number; age: number; gold: boolean };
+    let ctx = fitCanvas(canvas);
+    let w = canvas.clientWidth;
+    let h = canvas.clientHeight;
+    let embers: Ember[] = [];
+
+    const spawn = (anywhere: boolean): Ember => {
+      const life = 9 + Math.random() * 10;
+      return {
+        x: Math.random() * w,
+        y: anywhere ? h * (0.3 + Math.random() * 0.7) : h + 8,
+        vy: 12 + Math.random() * 24,
+        sway: 6 + Math.random() * 16,
+        phase: Math.random() * 6.3,
+        r: 0.8 + Math.random() * 1.4,
+        life,
+        age: anywhere ? Math.random() * life : 0,
+        gold: Math.random() < 0.35,
+      };
+    };
+
+    const reset = () => {
+      ctx = fitCanvas(canvas);
+      w = canvas.clientWidth;
+      h = canvas.clientHeight;
+      embers = Array.from({ length: Math.min(60, Math.round((w * h) / 20000)) }, () => spawn(true));
+    };
+
+    const draw = () => {
+      ctx.clearRect(0, 0, w, h);
+      for (const e of embers) {
+        // bright near the stove, gone by the time it reaches the top
+        const a = Math.sin((Math.PI * e.age) / e.life) * (0.15 + 0.5 * (e.y / h));
+        if (a <= 0.01) continue;
+        const x = e.x + Math.sin(e.age * 0.7 + e.phase) * e.sway;
+        ctx.fillStyle = e.gold ? `rgba(242,197,114,${a.toFixed(3)})` : `rgba(255,150,70,${a.toFixed(3)})`;
+        ctx.beginPath();
+        ctx.arc(x, e.y, e.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    };
+
+    reset();
+    addEventListener('resize', reset);
+
+    if (reducedMotion()) {
+      draw();
+      return;
+    }
+
+    let last = performance.now();
+    const tick = (now: number) => {
+      const dt = Math.min(0.05, (now - last) / 1000);
+      last = now;
+      for (let i = 0; i < embers.length; i++) {
+        const e = embers[i];
+        e.age += dt;
+        e.y -= e.vy * dt;
+        if (e.age > e.life || e.y < -10) embers[i] = spawn(false);
+      }
+      draw();
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
+</script>
+
+<style>
+  .kitchen__canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .kitchen__cloth {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 46vh;
+    /* same tint both ways so it reads as gingham, not stripes; long soft fade, no band edge */
+    background-image:
+      linear-gradient(90deg, rgb(233 150 120 / 0.05) 50%, transparent 50%),
+      linear-gradient(rgb(233 150 120 / 0.05) 50%, transparent 50%);
+    background-size: 44px 44px;
+    mask-image: linear-gradient(to top, #000 0%, rgb(0 0 0 / 0.35) 45%, transparent 100%);
+  }
+  .kitchen__heat {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 70% 38% at 50% 108%, rgb(240 151 58 / 0.26), transparent 70%),
+      radial-gradient(ellipse 45% 25% at 50% 104%, rgb(90 140 255 / 0.1), transparent 70%);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .kitchen__heat {
+      animation: heat 3.6s ease-in-out infinite alternate;
+    }
+  }
+  @keyframes heat {
+    to {
+      opacity: 0.7;
+    }
+  }
+</style>

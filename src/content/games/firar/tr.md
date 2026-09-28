@@ -23,6 +23,7 @@ gallery:
   - { src: ./shot-3.png, alt: Storyboard çizimleri }
   - { src: ./cover.png, alt: Kapak görseli }
 fx: siren
+backdrop: sea
 ---
 
 Bir sürat teknesinin içindeki aileyle birlikte polisten kaçıyorsun. Önünde kayalarla dolu bir su parkuru var ve amacın 100 saniye boyunca batmadan hayatta kalmak.

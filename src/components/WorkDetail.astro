@@ -76,7 +76,7 @@ const accent = game ? `--a1:${game.data.accent[0]};--a2:${game.data.accent[1]}` 
   route={route}
   item={slug}
   zone={isGame ? 'game' : 'tech'}
-  backdrop={game?.data.backdrop === 'parlamonium' ? 'parlamonium' : undefined}
+  backdrop={game?.data.backdrop}
   title={`${d.title} — Ender Aygün`}
   description={d.summary}
 >

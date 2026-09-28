@@ -19,6 +19,7 @@ team:
   - { name: Baturay Bostancı, role: Dijital sanatçı }
   - { name: Caner Ataysın, role: Müzik ve ses efektleri }
 fx: stars
+backdrop: orbit
 award: Jam ikincisi
 ---
 

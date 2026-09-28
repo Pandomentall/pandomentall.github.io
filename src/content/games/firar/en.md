@@ -23,6 +23,7 @@ gallery:
   - { src: ./shot-3.png, alt: Storyboard sketches }
   - { src: ./cover.png, alt: Cover art }
 fx: siren
+backdrop: sea
 ---
 
 *Firar* means "escape". You flee from the police with a family on a speedboat. Ahead lies a stretch of water full of rocks, and your goal is to survive 100 seconds without sinking.

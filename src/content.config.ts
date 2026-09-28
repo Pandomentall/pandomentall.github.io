@@ -87,7 +87,8 @@ const games = defineCollection({
       jam: z.string().optional(),
       // Code-drawn art for games without publishable media (see GameArt.astro).
       art: z.enum(['ellam']).optional(),
-      backdrop: z.enum(['grid', 'parlamonium']).default('grid'),
+      // Detail page backdrop; the games list always uses the zone's grid.
+      backdrop: z.enum(['grid', 'parlamonium', 'kitchen', 'sea', 'orbit']).default('grid'),
     }),
 });
 

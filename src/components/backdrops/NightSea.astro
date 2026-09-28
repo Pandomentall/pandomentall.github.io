@@ -1,0 +1,148 @@
+---
+// Firar detail backdrop: the chase at night, from far away. Slow swell lines over the lower
+// third with a few glints on the water, a searchlight beam sweeping lazily from the top
+// left, and the police lights as a faint red/blue breath in the top right corner.
+// Very translucent; reduced motion: one still frame, no sweep, no breathing.
+---
+
+<div class="backdrop sea" aria-hidden="true">
+  <div class="sea__beam"></div>
+  <div class="sea__police sea__police--red"></div>
+  <div class="sea__police sea__police--blue"></div>
+  <canvas class="sea__canvas"></canvas>
+</div>
+
+<script>
+  import { fitCanvas, reducedMotion } from '../../scripts/parlavan';
+
+  const canvas = document.querySelector<HTMLCanvasElement>('.sea__canvas');
+  if (canvas) start(canvas);
+
+  function start(canvas: HTMLCanvasElement) {
+    const LINES = 8;
+    let ctx = fitCanvas(canvas);
+    let w = canvas.clientWidth;
+    let h = canvas.clientHeight;
+    let glints: { x: number; y: number; p: number; s: number }[] = [];
+    const top = () => h * 0.6;
+
+    const reset = () => {
+      ctx = fitCanvas(canvas);
+      w = canvas.clientWidth;
+      h = canvas.clientHeight;
+      glints = Array.from({ length: Math.min(40, Math.round(w / 40)) }, () => ({
+        x: Math.random() * w,
+        y: top() + Math.random() * (h - top()),
+        p: Math.random() * 6.3,
+        s: 0.4 + Math.random() * 0.6,
+      }));
+    };
+
+    const draw = (t: number) => {
+      ctx.clearRect(0, 0, w, h);
+      ctx.lineWidth = 1;
+      for (let i = 0; i < LINES; i++) {
+        const k = i / (LINES - 1); // 0 = far (horizon), 1 = near (bottom)
+        const y0 = top() + (h - top()) * Math.pow(k, 1.35);
+        const amp = 2 + 9 * k;
+        const len = 240 + 300 * k;
+        const speed = 0.12 + 0.25 * k;
+        ctx.strokeStyle = `rgba(53,194,201,${(0.05 + 0.11 * k).toFixed(3)})`;
+        ctx.beginPath();
+        for (let x = -12; x <= w + 12; x += 12) {
+          const y =
+            y0 +
+            amp * Math.sin((x / len) * Math.PI * 2 + t * speed * Math.PI * 2 + i * 1.7) +
+            amp * 0.35 * Math.sin((x / (len * 0.41)) * Math.PI * 2 - t * speed * 4 + i);
+          if (x === -12) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+      for (const g of glints) {
+        const a = Math.pow(Math.max(0, Math.sin(t * g.s + g.p)), 8) * 0.55;
+        if (a < 0.02) continue;
+        ctx.fillStyle = `rgba(200,245,248,${a.toFixed(3)})`;
+        ctx.fillRect(g.x, g.y, 2, 1.2);
+      }
+    };
+
+    reset();
+    addEventListener('resize', reset);
+
+    if (reducedMotion()) {
+      draw(0);
+      return;
+    }
+    const t0 = performance.now();
+    const tick = (now: number) => {
+      draw((now - t0) / 1000);
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
+</script>
+
+<style>
+  .sea {
+    background: linear-gradient(to bottom, transparent 55%, rgb(20 60 70 / 0.25) 100%);
+  }
+  .sea__canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .sea__beam {
+    position: absolute;
+    top: -10vh;
+    left: 8vw;
+    width: 26vw;
+    min-width: 220px;
+    height: 130vh;
+    transform-origin: 50% 0;
+    transform: rotate(-18deg);
+    background: linear-gradient(to bottom, rgb(200 245 248 / 0.07), rgb(53 194 201 / 0.03) 55%, transparent 85%);
+    clip-path: polygon(46% 0, 54% 0, 100% 100%, 0 100%);
+    filter: blur(6px);
+  }
+  .sea__police {
+    position: absolute;
+    top: -20vmax;
+    right: -20vmax;
+    width: 55vmax;
+    height: 55vmax;
+    border-radius: 50%;
+  }
+  .sea__police--red {
+    background: radial-gradient(circle, rgb(224 72 74 / 0.12), transparent 60%);
+  }
+  .sea__police--blue {
+    background: radial-gradient(circle, rgb(70 130 255 / 0.12), transparent 60%);
+    opacity: 0;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .sea__beam {
+      animation: sweep 16s ease-in-out infinite alternate;
+    }
+    .sea__police--red {
+      animation: breathe 3.2s ease-in-out infinite alternate;
+    }
+    .sea__police--blue {
+      animation: breathe 3.2s ease-in-out infinite alternate-reverse;
+    }
+  }
+  @keyframes sweep {
+    to {
+      transform: rotate(14deg);
+    }
+  }
+  @keyframes breathe {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+</style>

@@ -16,6 +16,9 @@ import CloudStorm from '@tabler/icons/outline/cloud-storm.svg';
 import ParlavanTrail from '../components/ParlavanTrail.astro';
 import Constellation from '../components/backdrops/Constellation.astro';
 import ParlamoniumRain from '../components/backdrops/ParlamoniumRain.astro';
+import Kitchen from '../components/backdrops/Kitchen.astro';
+import NightSea from '../components/backdrops/NightSea.astro';
+import Orbit from '../components/backdrops/Orbit.astro';
 import Workbench from '../components/backdrops/Workbench.astro';
 import GameGrid from '../components/backdrops/GameGrid.astro';
 import { site } from '../data/site';
@@ -36,7 +39,7 @@ interface Props {
   item?: string;
   zone?: Zone;
   // Game pages may bring their own world; default follows the zone.
-  backdrop?: 'constellation' | 'parlamonium' | 'grid' | 'workbench';
+  backdrop?: 'constellation' | 'parlamonium' | 'kitchen' | 'sea' | 'orbit' | 'grid' | 'workbench';
   title: string;
   description: string;
   noindex?: boolean;
@@ -123,6 +126,9 @@ const ogImage = abs(`/og/cv-${lang}.png`);
 
     {backdrop === 'constellation' && <Constellation />}
     {backdrop === 'parlamonium' && <ParlamoniumRain />}
+    {backdrop === 'kitchen' && <Kitchen />}
+    {backdrop === 'sea' && <NightSea />}
+    {backdrop === 'orbit' && <Orbit />}
     {backdrop === 'grid' && <GameGrid />}
     {backdrop === 'workbench' && <Workbench />}
 

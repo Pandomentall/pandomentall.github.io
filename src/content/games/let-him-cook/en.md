@@ -23,6 +23,7 @@ gallery:
   - { src: ./shot-3.png, alt: Pies in the oven }
   - { src: ./shot-4.png, alt: Dishes arranged on the tray }
 fx: flame
+backdrop: kitchen
 ---
 
 Let Him Cook is an arcade game that tests your multitasking. Dishes with different sizes, cooking times and point values line up in a random queue; your job is to cook them all right and send them out before the queue overflows.

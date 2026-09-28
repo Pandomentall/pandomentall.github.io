@@ -43,7 +43,7 @@ const flame: Make = (_W, _H, c) => {
   type E = { x: number; y: number; vx: number; vy: number; life: number; age: number };
   const embers: E[] = [];
   const GAP = 16;
-  const span = c.w * 0.7;
+  const span = c.w * 0.8;
   const x0 = c.x + (c.w - span) / 2;
   const tongues = Array.from({ length: Math.floor(span / GAP) + 1 }, (_, i) => {
     const x = x0 + i * GAP;
@@ -67,7 +67,7 @@ const flame: Make = (_W, _H, c) => {
   return {
     update(dt, on) {
       heat = ramp(heat, on, dt);
-      if (on && heat > 0.5 && Math.random() < dt * 2.5)
+      if (on && heat > 0.5 && Math.random() < dt * 5)
         embers.push({ x: rand(x0, x0 + span), y: base - 8, vx: rand(-6, 6), vy: rand(-26, -14), life: rand(1.2, 2), age: 0 });
       for (let i = embers.length - 1; i >= 0; i--) {
         const e = embers[i];
@@ -84,15 +84,15 @@ const flame: Make = (_W, _H, c) => {
       if (heat > 0)
         for (const f of tongues) {
           const flick = Math.sin(t * 3.2 + f.seed) * 0.5 + Math.sin(t * 5.1 + f.seed * 1.7) * 0.5;
-          const height = (11 + flick * 3) * f.scale * heat;
+          const height = (16 + flick * 4) * f.scale * heat;
           if (height < 1) continue;
-          tongue(ctx, f.x, 4.5, height, '70,130,255', 0.55 * heat);
-          tongue(ctx, f.x, 2.2, height * 0.6, '180,220,255', 0.6 * heat);
+          tongue(ctx, f.x, 5, height, '70,130,255', 0.8 * heat);
+          tongue(ctx, f.x, 2.4, height * 0.6, '180,220,255', 0.85 * heat);
         }
       for (const e of embers) {
         const k = e.age / e.life;
         ctx.fillStyle = `rgba(255,${170 - k * 70},70,${(1 - k) * 0.8})`;
-        ctx.fillRect(e.x, e.y, 1.6, 1.6);
+        ctx.fillRect(e.x, e.y, 2, 2);
       }
       ctx.globalCompositeOperation = 'source-over';
     },
@@ -121,8 +121,8 @@ const siren: Make = (_W, _H, c) => {
       const s = (Math.sin(t * Math.PI * 1.4) + 1) / 2; // 0..1
       ctx.globalCompositeOperation = 'lighter';
       // measured: 0.1-0.4 peaked at alpha 76/255 and vanished on the dark bg
-      pool(ctx, c.x, c.y + c.h * 0.2, '255,60,70', (0.2 + 0.55 * s) * v);
-      pool(ctx, c.x + c.w, c.y + c.h * 0.2, '70,130,255', (0.2 + 0.55 * (1 - s)) * v);
+      pool(ctx, c.x, c.y + c.h * 0.2, '255,60,70', (0.25 + 0.65 * s) * v);
+      pool(ctx, c.x + c.w, c.y + c.h * 0.2, '70,130,255', (0.25 + 0.65 * (1 - s)) * v);
       ctx.globalCompositeOperation = 'source-over';
     },
     idle: () => v === 0,
@@ -132,21 +132,21 @@ const siren: Make = (_W, _H, c) => {
 const stars: Make = (W, H, c, accent) => {
   // Stars only live in the halo; each fades in at its own pace.
   const field: { x: number; y: number; r: number; p: number }[] = [];
-  while (field.length < 34) {
+  while (field.length < 50) {
     const x = rand(0, W);
     const y = rand(0, H);
     if (x > c.x - 3 && x < c.x + c.w + 3 && y > c.y - 3 && y < c.y + c.h + 3) continue;
-    field.push({ x, y, r: rand(0.5, 1.3), p: rand(0, 6) });
+    field.push({ x, y, r: rand(0.6, 1.6), p: rand(0, 6) });
   }
   type S = { x: number; y: number; vx: number; vy: number; len: number };
   const shots: S[] = [];
   let v = 0;
-  let next = 0.5;
+  let next = 0.2;
   return {
     update(dt, on, t) {
       v = ramp(v, on, dt);
       if (on && t > next) {
-        next = t + rand(2.2, 3.4);
+        next = t + rand(1.3, 2.2);
         // across the top halo, right to left, slightly downhill
         shots.push({ x: c.x + c.w + 40, y: rand(4, c.y - 10), vx: -rand(260, 340), vy: rand(4, 12), len: rand(60, 110) });
       }
@@ -160,7 +160,7 @@ const stars: Make = (W, H, c, accent) => {
     draw(ctx, t) {
       if (v > 0)
         for (const s of field) {
-          ctx.fillStyle = `rgba(232,228,220,${v * (0.3 + 0.3 * Math.sin(t * 1.3 + s.p))})`;
+          ctx.fillStyle = `rgba(232,228,220,${v * (0.5 + 0.35 * Math.sin(t * 1.3 + s.p))})`;
           ctx.fillRect(s.x, s.y, s.r * 2, s.r * 2);
         }
       ctx.lineCap = 'round';
@@ -170,9 +170,9 @@ const stars: Make = (W, H, c, accent) => {
         const ty = s.y - (s.vy / n) * s.len;
         const g = ctx.createLinearGradient(tx, ty, s.x, s.y);
         g.addColorStop(0, 'rgba(255,255,255,0)');
-        g.addColorStop(1, hexA(accent[0], 0.85));
+        g.addColorStop(1, hexA(accent[0], 1));
         ctx.strokeStyle = g;
-        ctx.lineWidth = 1.3;
+        ctx.lineWidth = 1.7;
         ctx.beginPath();
         ctx.moveTo(tx, ty);
         ctx.lineTo(s.x, s.y);
@@ -193,10 +193,10 @@ const GLYPHS = [...'ÇĞİÖŞÜçğıöşü#%&*+='];
 const matrix: Make = (_W, _H, c, accent) => {
   // A few words sit above the card in green; each scrambles and settles into Turkish in the
   // accent colour, holds, fades, and a new one takes its slot.
-  const SLOTS = Math.max(3, Math.floor(c.w / 220));
+  const SLOTS = Math.max(3, Math.floor(c.w / 180));
   type Wd = { en: string; tr: string; x: number; age: number; flipAt: number; life: number };
   const words: (Wd | null)[] = Array(SLOTS).fill(null);
-  const y = c.y - 11;
+  const y = c.y - 12;
   let v = 0;
   const spawn = (i: number, delay: number): Wd => {
     const [en, tr] = pick(WORDS);
@@ -217,14 +217,14 @@ const matrix: Make = (_W, _H, c, accent) => {
       }
     },
     draw(ctx) {
-      ctx.font = '600 11px "Geist Mono Variable", monospace';
+      ctx.font = '600 12.5px "Geist Mono Variable", monospace';
       for (const w of words) {
         if (!w || w.age < 0) continue;
         const fade = Math.min(w.age / 0.4, (w.life - w.age) / 0.6, 1) * v;
         if (fade <= 0) continue;
         const k = (w.age - w.flipAt) / 0.5; // 0..1 while scrambling
         let text = w.en;
-        let color = `rgba(110,227,154,${0.75 * fade})`;
+        let color = `rgba(110,227,154,${0.95 * fade})`;
         if (k >= 1) {
           text = w.tr;
           color = hexA(accent[0], 0.95 * fade);
@@ -257,7 +257,7 @@ const typing: Make = (_W, _H, c, accent) => {
   let phase: 'type' | 'hold' | 'erase' = 'type';
   let hold = 0;
   const x = c.x + 4;
-  const y = c.y - 11;
+  const y = c.y - 12;
   return {
     update(dt, on) {
       v = ramp(v, on, dt);
@@ -287,16 +287,16 @@ const typing: Make = (_W, _H, c, accent) => {
     },
     draw(ctx, t) {
       if (v === 0) return;
-      ctx.font = '500 11px "Geist Mono Variable", monospace';
+      ctx.font = '500 12.5px "Geist Mono Variable", monospace';
       const shown = REPORT[line].slice(0, Math.floor(chars));
-      ctx.fillStyle = `rgba(232,228,220,${0.8 * v})`;
+      ctx.fillStyle = `rgba(232,228,220,${v})`;
       ctx.fillText(shown, x, y);
       // keys in the accent colour
       ctx.fillStyle = hexA(accent[0], 0.95 * v);
       for (const m of shown.matchAll(/"[a-z]+"(?=:)/g)) ctx.fillText(m[0], x + ctx.measureText(shown.slice(0, m.index)).width, y);
       if (phase !== 'hold' || Math.floor(t * 2) % 2 === 0) {
         ctx.fillStyle = hexA(accent[1], 0.9 * v);
-        ctx.fillRect(x + ctx.measureText(shown).width + 2, y - 9, 1.5, 11);
+        ctx.fillRect(x + ctx.measureText(shown).width + 2, y - 10, 2, 13);
       }
     },
     idle: () => v === 0,
@@ -318,16 +318,16 @@ const parlamonium: Make = (W, _H, c, accent) => {
     update(dt, on) {
       v = ramp(v, on, dt);
       // slow and dense enough to read in a 34px strip (first pass at 9/s, 150-210px/s was invisible)
-      if (on && Math.random() < dt * 16)
+      if (on && Math.random() < dt * 24)
         drops.push({ x: rand(c.x + 20, Math.min(W, c.x + c.w + c.y * SL)), y: -rand(0, 10), v: rand(95, 135), len: rand(14, 24), purple: Math.random() < 0.2 });
-      if (on && Math.random() < dt * 0.8) drips.push({ x: rand(c.x + 30, c.x + c.w - 30), y: c.y + c.h + 1, v: 0, age: 0 });
+      if (on && Math.random() < dt * 1.6) drips.push({ x: rand(c.x + 30, c.x + c.w - 30), y: c.y + c.h + 1, v: 0, age: 0 });
       for (let i = drops.length - 1; i >= 0; i--) {
         const d = drops[i];
         d.y += d.v * dt;
         d.x -= d.v * dt * SL;
         if (d.y >= c.y) {
           if (d.x > c.x && d.x < c.x + c.w)
-            for (let k = 0; k < 2; k++) sparks.push({ x: d.x, y: c.y - 1, vx: rand(-30, 30), vy: rand(-45, -20), age: 0 });
+            for (let k = 0; k < 3; k++) sparks.push({ x: d.x, y: c.y - 1, vx: rand(-30, 30), vy: rand(-45, -20), age: 0 });
           drops.splice(i, 1);
         }
       }
@@ -385,8 +385,8 @@ const rating: Make = (_W, _H, c, accent) => {
   const sparks: Sp[] = [];
   let v = 0;
   let lit = 0; // 0..5, fractional while a star pops
-  const R = 7;
-  const cy = c.y - 14;
+  const R = 9;
+  const cy = c.y - 17;
   const centres = Array.from({ length: 5 }, (_, i) => c.x + c.w - 24 - (4 - i) * R * 2.6);
   const star = (ctx: CanvasRenderingContext2D, cx: number, r: number) => {
     ctx.beginPath();
@@ -401,7 +401,7 @@ const rating: Make = (_W, _H, c, accent) => {
     update(dt, on) {
       v = ramp(v, on, dt);
       lit = on ? Math.min(5, lit + dt * 4) : Math.max(0, lit - dt * 6);
-      if (on && lit >= 5 && Math.random() < dt * 3)
+      if (on && lit >= 5 && Math.random() < dt * 7)
         sparks.push({ x: pick(centres) + rand(-R, R), y: cy - R * 0.6, vy: rand(-22, -12), age: 0, life: rand(0.8, 1.3) });
       for (let i = sparks.length - 1; i >= 0; i--) {
         const s = sparks[i];
@@ -421,7 +421,7 @@ const rating: Make = (_W, _H, c, accent) => {
         });
       for (const s of sparks) {
         ctx.fillStyle = hexA(accent[0], (1 - s.age / s.life) * v);
-        ctx.fillRect(s.x, s.y, 1.6, 1.6);
+        ctx.fillRect(s.x, s.y, 2, 2);
       }
     },
     idle: () => v === 0 && sparks.length === 0,

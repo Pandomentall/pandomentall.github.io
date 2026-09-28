@@ -1,0 +1,209 @@
+---
+// Uzay Çöpü detail backdrop: low orbit, full of junk. A still star field, the cyan rim of a
+// planet in the bottom left corner, and debris (solar panels, shards, canisters) drifting and
+// tumbling slowly across; now and then a slow shooting star. Nearer pieces are bigger, faster
+// and brighter. Very translucent; reduced motion: one still frame.
+---
+
+<div class="backdrop orbit" aria-hidden="true">
+  <div class="orbit__stars"></div>
+  <div class="orbit__stars orbit__stars--far"></div>
+  <div class="orbit__planet"></div>
+  <canvas class="orbit__canvas"></canvas>
+</div>
+
+<script>
+  import { fitCanvas, reducedMotion } from '../../scripts/parlavan';
+
+  const canvas = document.querySelector<HTMLCanvasElement>('.orbit__canvas');
+  if (canvas) start(canvas);
+
+  function start(canvas: HTMLCanvasElement) {
+    type Piece = { x: number; y: number; vx: number; vy: number; rot: number; vr: number; size: number; kind: 0 | 1 | 2; depth: number };
+    type Shot = { x: number; y: number; vx: number; vy: number };
+    let ctx = fitCanvas(canvas);
+    let w = canvas.clientWidth;
+    let h = canvas.clientHeight;
+    let pieces: Piece[] = [];
+    let shot: Shot | null = null;
+    let nextShot = 4;
+
+    const make = (): Piece => {
+      const depth = 0.35 + Math.random() * 0.65;
+      return {
+        x: Math.random() * w,
+        y: Math.random() * h,
+        vx: (3 + Math.random() * 9) * depth * (Math.random() < 0.7 ? 1 : -1),
+        vy: (Math.random() - 0.5) * 4 * depth,
+        rot: Math.random() * 6.3,
+        vr: (Math.random() - 0.5) * 0.35,
+        size: 6 + 16 * depth,
+        kind: Math.floor(Math.random() * 3) as 0 | 1 | 2,
+        depth,
+      };
+    };
+
+    const reset = () => {
+      ctx = fitCanvas(canvas);
+      w = canvas.clientWidth;
+      h = canvas.clientHeight;
+      pieces = Array.from({ length: Math.min(18, Math.max(8, Math.round((w * h) / 70000))) }, make);
+    };
+
+    const drawPiece = (p: Piece) => {
+      const s = p.size;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.strokeStyle = `rgba(200,215,230,${(0.1 + 0.2 * p.depth).toFixed(3)})`;
+      ctx.fillStyle = `rgba(95,211,243,${(0.03 + 0.05 * p.depth).toFixed(3)})`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      if (p.kind === 0) {
+        // solar panel: two wings on a small body
+        ctx.rect(-s * 0.9, -s * 0.3, s * 0.7, s * 0.6);
+        ctx.rect(s * 0.2, -s * 0.3, s * 0.7, s * 0.6);
+        ctx.rect(-s * 0.2, -s * 0.15, s * 0.4, s * 0.3);
+        ctx.fill();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(-s * 0.55, -s * 0.3);
+        ctx.lineTo(-s * 0.55, s * 0.3);
+        ctx.moveTo(s * 0.55, -s * 0.3);
+        ctx.lineTo(s * 0.55, s * 0.3);
+        ctx.stroke();
+      } else if (p.kind === 1) {
+        // torn shard
+        ctx.moveTo(-s * 0.5, -s * 0.2);
+        ctx.lineTo(s * 0.1, -s * 0.5);
+        ctx.lineTo(s * 0.5, s * 0.15);
+        ctx.lineTo(-s * 0.15, s * 0.4);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      } else {
+        // canister with a band
+        ctx.roundRect(-s * 0.25, -s * 0.55, s * 0.5, s * 1.1, s * 0.2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(-s * 0.25, -s * 0.15);
+        ctx.lineTo(s * 0.25, -s * 0.15);
+        ctx.stroke();
+      }
+      ctx.restore();
+    };
+
+    const draw = () => {
+      ctx.clearRect(0, 0, w, h);
+      for (const p of pieces) drawPiece(p);
+      if (shot) {
+        const len = 120;
+        const n = Math.hypot(shot.vx, shot.vy);
+        const tx = shot.x - (shot.vx / n) * len;
+        const ty = shot.y - (shot.vy / n) * len;
+        const g = ctx.createLinearGradient(tx, ty, shot.x, shot.y);
+        g.addColorStop(0, 'rgba(95,211,243,0)');
+        g.addColorStop(1, 'rgba(95,211,243,0.55)');
+        ctx.strokeStyle = g;
+        ctx.lineWidth = 1.3;
+        ctx.beginPath();
+        ctx.moveTo(tx, ty);
+        ctx.lineTo(shot.x, shot.y);
+        ctx.stroke();
+      }
+    };
+
+    reset();
+    addEventListener('resize', reset);
+
+    if (reducedMotion()) {
+      draw();
+      return;
+    }
+
+    let last = performance.now();
+    let t = 0;
+    const tick = (now: number) => {
+      const dt = Math.min(0.05, (now - last) / 1000);
+      last = now;
+      t += dt;
+      for (const p of pieces) {
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.rot += p.vr * dt;
+        const m = p.size * 1.5;
+        if (p.x > w + m) p.x = -m;
+        if (p.x < -m) p.x = w + m;
+        if (p.y > h + m) p.y = -m;
+        if (p.y < -m) p.y = h + m;
+      }
+      if (!shot && t > nextShot) {
+        shot = { x: w * (0.5 + Math.random() * 0.5), y: -10, vx: -(220 + Math.random() * 80), vy: 90 + Math.random() * 50 };
+        nextShot = t + 7 + Math.random() * 6;
+      }
+      if (shot) {
+        shot.x += shot.vx * dt;
+        shot.y += shot.vy * dt;
+        if (shot.x < -150 || shot.y > h * 0.7) shot = null;
+      }
+      draw();
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
+</script>
+
+<style>
+  .orbit__canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .orbit__stars {
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(1.2px 1.2px at 8% 12%, #e8e4dc, transparent),
+      radial-gradient(1px 1px at 23% 38%, #5fd3f3, transparent),
+      radial-gradient(1.4px 1.4px at 41% 9%, #e8e4dc, transparent),
+      radial-gradient(1px 1px at 57% 27%, #e8e4dc, transparent),
+      radial-gradient(1.2px 1.2px at 72% 64%, #e8e4dc, transparent),
+      radial-gradient(1px 1px at 86% 33%, #5fd3f3, transparent),
+      radial-gradient(1px 1px at 94% 86%, #e8e4dc, transparent),
+      radial-gradient(1.2px 1.2px at 33% 72%, #e8e4dc, transparent);
+    background-size: 480px 480px;
+    opacity: 0.6;
+  }
+  .orbit__stars--far {
+    background-size: 310px 310px;
+    background-position: 70px 40px;
+    opacity: 0.3;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .orbit__stars {
+      animation: twinkle-field 5s ease-in-out infinite alternate;
+    }
+    .orbit__stars--far {
+      animation-duration: 7.5s;
+    }
+  }
+  @keyframes twinkle-field {
+    to {
+      opacity: 0.25;
+    }
+  }
+  .orbit__planet {
+    position: absolute;
+    left: -35vmax;
+    bottom: -55vmax;
+    width: 80vmax;
+    height: 80vmax;
+    border-radius: 50%;
+    background: radial-gradient(circle at 60% 30%, rgb(40 70 90 / 0.5), rgb(30 40 60 / 0.3) 60%, transparent 71%);
+    box-shadow:
+      0 0 0 1px rgb(95 211 243 / 0.12),
+      0 0 60px 6px rgb(95 211 243 / 0.08);
+  }
+</style>
