@@ -335,6 +335,21 @@ const accent = game ? `--a1:${game.data.accent[0]};--a2:${game.data.accent[1]}` 
     color: var(--muted);
     max-width: 40rem;
   }
+  /* phones: smaller logo on top of the title so the summary gets the full width */
+  @media (max-width: 559px) {
+    .hero__id {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.8rem;
+    }
+    .hero__id :global(.plogo) {
+      width: 3.5rem !important;
+      height: 3.5rem !important;
+    }
+    .hero__media {
+      aspect-ratio: 16 / 9;
+    }
+  }
   .actions {
     display: flex;
     flex-wrap: wrap;

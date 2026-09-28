@@ -22,6 +22,9 @@ import { site } from '../data/site';
 import { personGraph } from '../lib/seo';
 import { hourlyStatus } from '../data/status';
 import { other, pathFor, t, type Lang, type RouteKey } from '../i18n/ui';
+// Preloaded so text is set in Geist from the first paint (Turkish letters live in latin-ext).
+import geistLatin from '@fontsource-variable/geist/files/geist-latin-wght-normal.woff2?url';
+import geistLatinExt from '@fontsource-variable/geist/files/geist-latin-ext-wght-normal.woff2?url';
 
 export type Zone = 'cv' | 'game' | 'tech';
 
@@ -62,6 +65,31 @@ const ogImage = abs(`/og/cv-${lang}.png`);
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content={zone === 'game' ? '#232940' : zone === 'tech' ? '#34414f' : '#2e3844'} />
     <title>{title}</title>
+    <link rel="preload" href={geistLatin} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={geistLatinExt} as="font" type="font/woff2" crossorigin />
+    <script is:inline>
+      // In-site navigation without a native view transition (Firefox): let the content
+      // arrive with the same small rise (see global.css). Direct visits render as-is.
+      (function () {
+        var root = document.documentElement;
+        try {
+          if (new URL(document.referrer).origin === location.origin) root.dataset.enter = '';
+        } catch (e) {}
+        addEventListener('pagereveal', function (e) {
+          if (e.viewTransition) delete root.dataset.enter;
+        });
+      })();
+    </script>
+    <script type="speculationrules" is:inline>
+      {
+        "prerender": [
+          {
+            "where": { "and": [{ "href_matches": "/*" }, { "not": { "href_matches": "/*.pdf" } }] },
+            "eagerness": "moderate"
+          }
+        ]
+      }
+    </script>
     {site.googleVerification && <meta name="google-site-verification" content={site.googleVerification} />}
     {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
     <meta name="description" content={description} />
@@ -182,6 +210,15 @@ const ogImage = abs(`/og/cv-${lang}.png`);
     </footer>
 
     <script>
+      // Images still loading fade in when they are ready (global.css .img-wait/.img-fade).
+      for (const img of document.querySelectorAll<HTMLImageElement>('main img')) {
+        if (img.complete) continue;
+        img.classList.add('img-fade', 'img-wait');
+        const done = () => img.classList.remove('img-wait');
+        img.addEventListener('load', done, { once: true });
+        img.addEventListener('error', done, { once: true });
+      }
+
       // Live local time in Bandırma, so people writing in know what hour it is here.
       for (const el of document.querySelectorAll<HTMLTimeElement>('[data-clock]')) {
         const fmt = new Intl.DateTimeFormat(el.dataset.lang === 'tr' ? 'tr-TR' : 'en-GB', {
@@ -433,9 +470,21 @@ const ogImage = abs(`/og/cv-${lang}.png`);
       margin-inline: 0.75rem 0;
     }
   }
+  /* phones: the two-row header scrolls away instead of holding an eighth of the screen */
+  @media (max-width: 639px) {
+    .site-header {
+      position: relative;
+    }
+    .site-header__inner {
+      padding-block: 0.6rem 0.2rem;
+    }
+    .site-nav a {
+      padding-block: 0.45rem;
+    }
+  }
 
   .site-footer {
-    margin-top: 5rem;
+    margin-top: clamp(3.5rem, 8vw, 5rem);
     border-top: 1px solid var(--border-soft);
     color: var(--muted);
     font-size: 0.9rem;

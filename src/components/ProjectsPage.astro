@@ -35,8 +35,13 @@ const projects = await listWorks('projects', lang);
 
 <style>
   .projects {
-    padding-top: 3.5rem;
+    padding-top: 2rem;
     --row-radius: 14px;
+  }
+  @media (min-width: 760px) {
+    .projects {
+      padding-top: 3.5rem;
+    }
   }
   .head .label {
     color: var(--blue);
@@ -54,8 +59,15 @@ const projects = await listWorks('projects', lang);
   .rows {
     display: grid;
     gap: 1rem;
-    margin: 2.5rem 0 0;
+    margin: 1.75rem 0 0;
     padding: 0;
     list-style: none;
+  }
+  /* room for the hover halo between cards (34px, see WorkRow) */
+  @media (min-width: 760px) {
+    .rows {
+      gap: 2.75rem;
+      margin-top: 2.75rem;
+    }
   }
 </style>

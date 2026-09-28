@@ -572,7 +572,7 @@ const folders: Folder[] = [
   }
   @keyframes papers-out {
     from {
-      transform: translateY(5.5rem);
+      transform: translateY(var(--papers-from, 5.5rem));
     }
     to {
       transform: none;
@@ -601,5 +601,116 @@ const folders: Folder[] = [
     display: flex;
     justify-content: center;
     font-size: 1.1rem;
+  }
+
+  /* ---------- phones: hero sized by its content, folders as a 2x2 desk ---------- */
+  @media (max-width: 759px) {
+    .hero {
+      min-height: 0;
+    }
+    .hero__content {
+      padding-block: 3rem 3.5rem;
+    }
+    .hero__intro {
+      font-size: 1rem;
+    }
+    .mono-bg,
+    .scroll-cue {
+      display: none;
+    }
+    .orbits {
+      width: 110vw;
+      right: -45vw;
+      opacity: 0.45;
+    }
+
+    .folders {
+      padding-top: 1.5rem;
+    }
+    .folders > h2 {
+      margin-bottom: 0;
+    }
+    .grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 2.75rem 0.85rem;
+      padding-top: 2.5rem;
+    }
+    .slot {
+      --papers-from: 3rem;
+    }
+    .folder {
+      height: 11.5rem;
+    }
+    .folder__tab {
+      padding: 0.25rem 0.75rem 0.15rem;
+      font-size: 0.68rem;
+    }
+    .papers {
+      left: 6%;
+      right: 6%;
+      top: -1rem;
+      height: 6.5rem;
+    }
+    .paper {
+      width: 48%;
+      height: 5.6rem;
+    }
+    .paper--2 {
+      left: 26%;
+    }
+    .paper--3 {
+      left: 50%;
+    }
+    .paper--logo {
+      padding-top: 0.55rem;
+    }
+    .paper--logo :global(.plogo) {
+      width: 2.1rem !important;
+      height: 2.1rem !important;
+    }
+    .paper--doc,
+    .paper--note {
+      gap: 0.3rem;
+      padding: 0.45rem;
+    }
+    .doc__band {
+      height: 0.9rem;
+    }
+    .doc__line {
+      height: 0.25rem;
+    }
+    .paper--pdf {
+      padding: 0.45rem;
+      font-size: 0.65rem;
+    }
+    .folder__front {
+      height: 64%;
+      gap: 0.15rem;
+      padding: 0.7rem 0.8rem 0.75rem;
+    }
+    .folder__title {
+      font-size: 1.12rem;
+    }
+    .folder__text {
+      font-size: 0.76rem;
+      line-height: 1.35;
+    }
+    .folder__meta {
+      margin-top: 0.2rem;
+      font-size: 0.66rem;
+    }
+    .folder__open {
+      display: none;
+    }
+
+    .outro {
+      margin-top: 4rem;
+    }
+    .outro .outro__body {
+      font-size: 1rem;
+    }
+    .outro__mail {
+      font-size: 1rem;
+    }
   }
 </style>

@@ -67,19 +67,61 @@ html {
   background: var(--bg);
 }
 
+/* ---------- page transitions ----------
+   Links are prerendered on hover (speculation rules in Base.astro), so the next page is
+   usually ready before the click lands. Chromium/Safari then run a cross-document view
+   transition: the header stays put, the backdrop crossfades, and the content ("page")
+   leaves quickly and arrives with a small rise. Browsers without it (Firefox) get the same
+   arrival as a plain animation on in-site navigation ([data-enter], set in Base.astro). */
 @media (prefers-reduced-motion: no-preference) {
   html {
     scroll-behavior: smooth;
   }
-  /* Native cross-page transitions (MPA); the header stays put while content fades. */
   @view-transition {
     navigation: auto;
+  }
+  main {
+    view-transition-name: page;
+  }
+  [data-enter] main {
+    animation: page-in 380ms var(--ease) both;
   }
 }
 
 ::view-transition-old(root),
 ::view-transition-new(root) {
-  animation-duration: 220ms;
+  animation-duration: 260ms;
+}
+/* pages differ in height: no morph between them, just leave and arrive */
+::view-transition-group(page) {
+  animation: none;
+}
+::view-transition-old(page) {
+  animation: page-out 140ms ease-in both;
+}
+::view-transition-new(page) {
+  animation: page-in 380ms var(--ease) 40ms both;
+}
+
+@keyframes page-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+/* Images fade in once decoded instead of popping into place (class set by Base.astro;
+   without JS they simply show). */
+.img-wait {
+  opacity: 0;
+}
+.img-fade {
+  transition: opacity 450ms var(--ease);
 }
 
 body {
