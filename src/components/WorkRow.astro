@@ -3,7 +3,7 @@
 // (frame + glow). Its hover effect (src/scripts/fx.ts) plays in a halo AROUND the card:
 // .row-wrap holds the fx canvas (inset by FX_PAD) and the card, and the card's rectangle is
 // clipped out of the canvas, so the effect never touches the image or the text.
-import { Image } from 'astro:assets';
+import FitImage from './FitImage.astro';
 import ProjectLogo from './ProjectLogo.astro';
 import ArrowRight from '@tabler/icons/outline/arrow-right.svg';
 import { t, type Lang } from '../i18n/ui';
@@ -31,7 +31,7 @@ const meta = game ? [game.data.jam, game.data.engine] : d.tags.slice(0, 3);
     <div class="row__media">
       {
         d.thumb ? (
-          <Image src={d.thumb} alt="" width={640} format="webp" quality={78} style={`object-position:${d.thumbPosition}`} />
+          <FitImage src={d.thumb} width={640} />
         ) : project ? (
           <span class="row__logo">
             <ProjectLogo entry={project} size={72} />
@@ -107,9 +107,8 @@ const meta = game ? [game.data.jam, game.data.engine] : d.tags.slice(0, 3);
       0 12px 34px -18px color-mix(in srgb, var(--a2) 55%, transparent);
   }
   @media (prefers-reduced-motion: no-preference) {
-    .row:hover .row__media :global(img),
-    .row:hover .row__media :global(.cover > *) {
-      transform: scale(1.025);
+    .row:hover .row__media :global(.fit__fill) {
+      transform: scale(1.06);
     }
   }
 
@@ -127,15 +126,6 @@ const meta = game ? [game.data.jam, game.data.engine] : d.tags.slice(0, 3);
     aspect-ratio: 12 / 5;
     overflow: hidden;
     background: #1c232c;
-  }
-  .row__media :global(img),
-  .row__media :global(.cover) {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: 0 0;
-    aspect-ratio: auto;
-    transition: transform 900ms var(--ease);
   }
   .row__logo {
     display: grid;

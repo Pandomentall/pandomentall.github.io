@@ -9,8 +9,21 @@ engine: Unity
 platforms: [PC]
 accent: ["#e3a857", "#8fa9c2"]
 thumb: ./cover.png
-thumbPosition: center
 tags: [3D, Korku, Unity]
+gallery:
+  - { src: ./morning_shift.jpg, alt: "Sabah vardiyası, masa ve pencere önündeki gemiler" }
+  - { src: ./control_room.jpg, alt: "Kontrol odası, faks, belge okuyucu ve telsiz konsolu" }
+  - { src: ./fax_printing.jpg, alt: "Faks makinesi ve belge okuyucu" }
+  - { src: ./every_line_calling.jpg, alt: "Beş hattın aynı anda çağırdığı telsiz konsolu" }
+  - { src: ./searchlight_dusk.jpg, alt: "Alacakaranlıkta projektör ışığındaki gemi" }
+  - { src: ./on_the_gallery.jpg, alt: "Fırtınalı gecede galerideki karaltı" }
+  - { src: ./fire_in_the_rain.jpg, alt: "Yağmurda ufukta yanan gemi" }
+  - { src: ./burning_ship.jpg, alt: "Fener huzmesi ve yanan gemi" }
+clips:
+  - { src: /games/leeway/faks.webm, title: "Faks basıyor, satırlar kırmızı kalemle işaretleniyor" }
+  - { src: /games/leeway/durbun.webm, title: "Dürbünle gemiyi tartmak" }
+  - { src: /games/leeway/projektor.webm, title: "Alacakaranlıkta projektör" }
+  - { src: /games/leeway/firtina.webm, title: "Fırtına ve ufukta yanan gemi" }
 fx: beacon
 backdrop: storm
 ---

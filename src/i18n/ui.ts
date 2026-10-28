@@ -115,6 +115,7 @@ export const ui = {
   'detail.next': { tr: 'Sonraki', en: 'Next' },
   'detail.about': { tr: 'Hakkında', en: 'About' },
   'detail.gallery': { tr: 'Görseller', en: 'Gallery' },
+  'detail.clips': { tr: 'Oynanış', en: 'Gameplay' },
   'detail.team': { tr: 'Ekip', en: 'Team' },
   'detail.posts': { tr: 'İlgili yazılar', en: 'Related posts' },
   'detail.readme': { tr: 'GitHub’dan', en: 'From GitHub' },

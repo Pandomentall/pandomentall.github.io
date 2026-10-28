@@ -2,8 +2,10 @@
 //   dist/cv/ender-aygun-cv-{tr,en}.pdf  — A4 CV from the page's own print CSS
 //   dist/og/cv-{tr,en}.png              — 1200x630 social preview from /og/<lang>/
 // Runs after `astro build` (see package.json "build"), so both always match the data.
+// Then it checks that no image on any page is cropped (desktop + phone widths); a cropped
+// image fails the build. Decorative fills (FitImage's blur layer) carry data-fill and are skipped.
 import { createServer } from 'node:http';
-import { readFile, rm, stat } from 'node:fs/promises';
+import { readdir, readFile, rm, stat } from 'node:fs/promises';
 import { extname, join, resolve } from 'node:path';
 import { chromium } from 'playwright';
 
@@ -24,6 +26,8 @@ const types = {
   '.svg': 'image/svg+xml',
   '.webp': 'image/webp',
   '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.webm': 'video/webm',
   '.woff2': 'font/woff2',
   '.ico': 'image/x-icon',
 };
@@ -64,6 +68,57 @@ try {
   // The card pages only exist to be screenshotted.
   await rm(join(dist, 'og', 'tr'), { recursive: true, force: true });
   await rm(join(dist, 'og', 'en'), { recursive: true, force: true });
+
+  // Crop check: every <img> must show the whole picture.
+  const pages = [];
+  const walk = async (dir, url) => {
+    for (const e of await readdir(dir, { withFileTypes: true })) {
+      if (e.isDirectory()) await walk(join(dir, e.name), `${url}${e.name}/`);
+      else if (e.name === 'index.html') pages.push(url);
+    }
+  };
+  await walk(dist, '/');
+  const crops = [];
+  for (const viewport of [{ width: 1280, height: 800 }, { width: 390, height: 844 }]) {
+    const view = await browser.newPage({ viewport });
+    for (const path of pages) {
+      await view.goto(base + path, { waitUntil: 'networkidle' });
+      const found = await view.evaluate(async () => {
+        // collapsed READMEs hide their lower half on purpose ("show more"); that is not a crop
+        document.querySelectorAll('.readme-wrap.is-collapsed').forEach((w) => w.classList.remove('is-collapsed'));
+        const imgs = [...document.querySelectorAll('img')].filter((i) => !i.closest('[data-fill]'));
+        await Promise.all(imgs.map((i) => ((i.loading = 'eager'), i.decode().catch(() => {}))));
+        const out = [];
+        for (const img of imgs) {
+          const r = img.getBoundingClientRect();
+          if (!r.width || !r.height || !img.naturalWidth) continue;
+          const name = img.currentSrc.split('/').pop().split('?')[0];
+          const fit = getComputedStyle(img).objectFit;
+          const nat = img.naturalWidth / img.naturalHeight;
+          const box = r.width / r.height;
+          // anything but contain crops (cover) or distorts (fill) once the box ratio differs
+          if (fit !== 'contain' && Math.abs(box - nat) / nat > 0.02)
+            out.push(`${name}: object-fit ${fit}, box ${box.toFixed(2)} vs image ${nat.toFixed(2)}`);
+          for (let p = img.parentElement; p && p !== document.body; p = p.parentElement) {
+            const cs = getComputedStyle(p);
+            if (cs.overflowX === 'visible' && cs.overflowY === 'visible') continue;
+            const q = p.getBoundingClientRect();
+            if (r.left < q.left - 1 || r.top < q.top - 1 || r.right > q.right + 1 || r.bottom > q.bottom + 1) {
+              out.push(`${name}: clipped by ${p.tagName.toLowerCase()}.${[...p.classList].join('.')}`);
+              break;
+            }
+          }
+        }
+        return out;
+      });
+      for (const c of found) crops.push(`${viewport.width}px ${path} ${c}`);
+    }
+    await view.close();
+  }
+  if (crops.length) {
+    console.error(`  cropped images (${crops.length}):\n    ${crops.join('\n    ')}`);
+    process.exitCode = 1;
+  } else console.log(`  ok   no cropped images (${pages.length} pages, 2 widths)`);
 } finally {
   await browser.close();
   server.close();
