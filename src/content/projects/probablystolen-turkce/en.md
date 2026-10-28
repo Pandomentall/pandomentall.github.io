@@ -15,7 +15,7 @@ links:
   site: https://pandomentall.github.io/ProbablyStolenTurkceYama-Kurulum/
   steam: https://steamcommunity.com/sharedfiles/filedetails/?id=3829169438
   download: https://github.com/Pandomentall/ProbablyStolenTurkceYama-Kurulum/releases/latest
-thumb: ./thumb.webp
+thumb: ./thumb.png
 accent: ["#e8b93c", "#4fc6c9"]
 fx: matrix
 ---
