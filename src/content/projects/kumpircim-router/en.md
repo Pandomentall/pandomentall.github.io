@@ -4,7 +4,7 @@ summary: A one-page link hub for a kumpir and waffle shop that sends customers t
 lang: en
 kind: web
 status: released
-order: 4
+order: 5
 monogram: { text: KB, color: "#ff9a3c" }
 repo: Pandomentall/Kumpircim-Blue-Waffle-Router
 tags: [HTML, CSS, GitHub Pages]

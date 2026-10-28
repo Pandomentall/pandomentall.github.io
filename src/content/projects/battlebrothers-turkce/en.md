@@ -4,7 +4,7 @@ summary: 12,697 lines, 543,384 words; roughly 80% of the game in Turkish. Compat
 lang: en
 kind: localization
 status: released
-order: 3
+order: 4
 monogram: { text: BB, color: "#c9a227" }
 repo: Pandomentall/BattleBrothersTurkceYama-Kurulum
 readme: README.md

@@ -4,7 +4,7 @@ summary: Oyunun tamamı ve bütün DLC'ler Türkçe; 59.214 altyazı repliği, 3
 lang: tr
 kind: localization
 status: released
-order: 2
+order: 3
 logo: ./logo.png
 repo: Pandomentall/NotForBroadcastTurkceYama-Kurulum
 readme: README.md

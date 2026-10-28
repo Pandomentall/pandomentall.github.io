@@ -4,7 +4,7 @@ summary: 12.697 satır, 543.384 kelime; oyunun yaklaşık %80'i Türkçe. Legend
 lang: tr
 kind: localization
 status: released
-order: 3
+order: 4
 monogram: { text: BB, color: "#c9a227" }
 repo: Pandomentall/BattleBrothersTurkceYama-Kurulum
 readme: README.md

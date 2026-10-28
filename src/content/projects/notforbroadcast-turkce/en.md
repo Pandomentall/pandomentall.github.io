@@ -4,7 +4,7 @@ summary: The whole game and every DLC in Turkish; 59,214 subtitle lines, 331,379
 lang: en
 kind: localization
 status: released
-order: 2
+order: 3
 logo: ./logo.png
 repo: Pandomentall/NotForBroadcastTurkceYama-Kurulum
 readme: README.md

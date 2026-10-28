@@ -48,7 +48,8 @@ if (game) {
 } else if (project) {
   facts.push([t(lang, 'fact.kind'), t(lang, `kind.${project.data.kind}`)]);
 }
-if (repo?.license) facts.push([t(lang, 'fact.license'), repo.license]);
+// GitHub reports licenses it cannot classify (e.g. CC BY-NC-SA) as NOASSERTION
+if (repo?.license && repo.license !== 'NOASSERTION') facts.push([t(lang, 'fact.license'), repo.license]);
 if (repo?.release) facts.push([t(lang, 'fact.release'), `${repo.release.tag} · ${fmtDate(repo.release.date)}`]);
 if (repo?.release && repo.release.downloads > 0)
   facts.push([t(lang, 'fact.downloads'), repo.release.downloads.toLocaleString(locale)]);
