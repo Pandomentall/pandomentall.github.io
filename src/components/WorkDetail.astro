@@ -5,7 +5,6 @@ import { Image, getImage } from 'astro:assets';
 import { render } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import ProjectLogo from './ProjectLogo.astro';
-import GameArt from './GameArt.astro';
 import ArrowLeft from '@tabler/icons/outline/arrow-left.svg';
 import ArrowRight from '@tabler/icons/outline/arrow-right.svg';
 import Github from '@tabler/icons/outline/brand-github.svg';
@@ -92,8 +91,6 @@ const accent = game ? `--a1:${game.data.accent[0]};--a2:${game.data.accent[1]}` 
           <div class="hero__media">
             {game.data.thumb ? (
               <Image src={game.data.thumb} alt="" width={1200} format="webp" quality={80} loading="eager" />
-            ) : game.data.art ? (
-              <GameArt id={game.data.art} />
             ) : null}
           </div>
         )

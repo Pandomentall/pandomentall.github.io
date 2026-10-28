@@ -9,9 +9,9 @@
 //   stars        Uzay Çöpü        stars twinkling around the card, an occasional shooting star
 //   matrix       Turkish patches  words above the card scramble from English into Turkish
 //   typing       RaporGo          one report JSON line at a time, typed above the card
-//   parlamonium  Ellam: Rogue     gold streaks land on the top edge and spark, drips fall off
+//   beacon       Leeway           lighthouse on the top-left corner, beam reaches forward, ships sail right
 //   rating       Kumpircim        five stars above the card light up one by one
-export type FxKind = 'flame' | 'siren' | 'stars' | 'matrix' | 'typing' | 'parlamonium' | 'rating';
+export type FxKind = 'flame' | 'siren' | 'stars' | 'matrix' | 'typing' | 'beacon' | 'rating';
 
 // Halo size around the card; must match the canvas inset in WorkRow.astro.
 export const FX_PAD = { x: 18, y: 34 } as const;
@@ -303,78 +303,119 @@ const typing: Make = (_W, _H, c, accent) => {
   };
 };
 
-const parlamonium: Make = (W, _H, c, accent) => {
-  // Parlamonium rain lands on the card: slanted gold streaks (the odd purple one) end on the
-  // top edge with a small spark; once in a while a drip runs off the bottom edge.
-  type Dr = { x: number; y: number; v: number; len: number; purple: boolean };
-  type Sp = { x: number; y: number; vx: number; vy: number; age: number };
-  type Drip = { x: number; y: number; v: number; age: number };
-  const drops: Dr[] = [];
-  const sparks: Sp[] = [];
-  const drips: Drip[] = [];
-  const SL = 0.32;
+const beacon: Make = (_W, _H, c, accent) => {
+  // A small lighthouse stands on the card's top-left corner and its beam reaches forward
+  // along the top edge (grows out while hovered, sways a little). Ships sail rightwards on
+  // the top edge at random intervals and catch the light while they are inside the beam.
+  type Sh = { x: number; v: number; len: number; tall: number; age: number };
+  const ships: Sh[] = [];
+  const sea = c.y - 1; // the card's top edge is the waterline
+  const lx = c.x + 18; // lighthouse x
+  const lampY = sea - 23;
   let v = 0;
+  let reach = 0;
+  let next = rand(0.3, 1.2);
+  const tower = (ctx: CanvasRenderingContext2D, a: number) => {
+    ctx.fillStyle = hexA(accent[1], 0.9 * a);
+    ctx.beginPath();
+    ctx.moveTo(lx - 5, sea);
+    ctx.lineTo(lx - 3, lampY + 4);
+    ctx.lineTo(lx + 3, lampY + 4);
+    ctx.lineTo(lx + 5, sea);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillRect(lx - 4, lampY + 2, 8, 2); // gallery
+    ctx.fillRect(lx - 2, lampY - 4, 4, 1.5); // roof
+    ctx.fillStyle = hexA(accent[0], a);
+    ctx.fillRect(lx - 2, lampY - 2.5, 4, 4.5); // lamp
+  };
+  const shipPath = (ctx: CanvasRenderingContext2D, s: Sh) => {
+    const x = s.x;
+    const y = sea;
+    ctx.beginPath(); // hull: flat stern, raked bow pointing right
+    ctx.moveTo(x - s.len / 2, y - 4);
+    ctx.lineTo(x + s.len / 2 + 3, y - 4);
+    ctx.lineTo(x + s.len / 2 - 1, y);
+    ctx.lineTo(x - s.len / 2 + 1, y);
+    ctx.closePath();
+    ctx.rect(x - s.len / 2 + 2, y - 4 - s.tall, s.len * 0.28, s.tall); // bridge aft
+    ctx.rect(x - s.len / 2 + 4, y - 7 - s.tall, 1.5, 3); // mast
+  };
+  // lit = the silhouette itself picks up the beam colour (no box around it)
+  const ship = (ctx: CanvasRenderingContext2D, s: Sh, a: number, lit: number) => {
+    shipPath(ctx, s);
+    ctx.fillStyle = hexA(accent[1], 0.75 * a);
+    ctx.fill();
+    if (lit > 0) {
+      ctx.fillStyle = hexA(accent[0], 0.6 * lit * a);
+      ctx.fill();
+    }
+  };
+  const spawn = (x: number, age: number) => {
+    const len = rand(18, 30);
+    ships.push({ x, v: rand(22, 38), len, tall: rand(3, 5), age });
+  };
   return {
     update(dt, on) {
       v = ramp(v, on, dt);
-      // slow and dense enough to read in a 34px strip (first pass at 9/s, 150-210px/s was invisible)
-      if (on && Math.random() < dt * 24)
-        drops.push({ x: rand(c.x + 20, Math.min(W, c.x + c.w + c.y * SL)), y: -rand(0, 10), v: rand(95, 135), len: rand(14, 24), purple: Math.random() < 0.2 });
-      if (on && Math.random() < dt * 1.6) drips.push({ x: rand(c.x + 30, c.x + c.w - 30), y: c.y + c.h + 1, v: 0, age: 0 });
-      for (let i = drops.length - 1; i >= 0; i--) {
-        const d = drops[i];
-        d.y += d.v * dt;
-        d.x -= d.v * dt * SL;
-        if (d.y >= c.y) {
-          if (d.x > c.x && d.x < c.x + c.w)
-            for (let k = 0; k < 3; k++) sparks.push({ x: d.x, y: c.y - 1, vx: rand(-30, 30), vy: rand(-45, -20), age: 0 });
-          drops.splice(i, 1);
-        }
+      reach = on ? Math.min(1, reach + dt / 0.9) : Math.max(0, reach - dt / 0.7);
+      next -= dt;
+      // a hover that starts on an empty sea finds ships already underway: one mid-way, one near the end
+      if (on && ships.length === 0 && v < 0.2) {
+        const span = c.x + c.w - lx;
+        spawn(lx + span * rand(0.35, 0.55), 1);
+        spawn(lx + span * rand(0.78, 0.92), 1);
+        next = rand(0.4, 1.4);
       }
-      for (let i = sparks.length - 1; i >= 0; i--) {
-        const s = sparks[i];
+      if (on && next <= 0) {
+        spawn(lx - 10, 0);
+        next = rand(1.6, 4.2);
+      }
+      for (let i = ships.length - 1; i >= 0; i--) {
+        const s = ships[i];
+        s.x += s.v * dt;
         s.age += dt;
-        s.vy += 140 * dt;
-        s.x += s.vx * dt;
-        s.y = Math.min(c.y - 1, s.y + s.vy * dt);
-        if (s.age > 0.6) sparks.splice(i, 1);
+        if (s.x - s.len > c.x + c.w + FX_PAD.x) ships.splice(i, 1);
       }
-      for (let i = drips.length - 1; i >= 0; i--) {
-        const d = drips[i];
-        d.age += dt;
-        if (d.age > 0.5) {
-          d.v += 160 * dt; // hangs for a moment, then falls
-          d.y += d.v * dt;
-        }
-        if (d.age > 1.4) drips.splice(i, 1);
-      }
+      if (!on && v === 0) ships.length = 0;
     },
-    draw(ctx) {
-      ctx.lineCap = 'round';
+    draw(ctx, t) {
+      if (v === 0) return;
+      const sway = Math.sin(t * 0.9) * 0.035; // radians
+      const len = (c.w - 30) * (1 - Math.pow(1 - reach, 3));
+      const halfAt = (d: number) => 2 + d * 0.07; // beam half-height at distance d
       ctx.globalCompositeOperation = 'lighter';
-      for (const d of drops) {
-        const g = ctx.createLinearGradient(d.x + d.len * SL, d.y - d.len, d.x, d.y);
-        const col = d.purple ? accent[1] : accent[0];
-        g.addColorStop(0, hexA(col, 0));
-        g.addColorStop(1, hexA(col, v));
-        ctx.strokeStyle = g;
-        ctx.lineWidth = 1.6;
+      if (len > 1) {
+        const tx = lx + Math.cos(sway) * len;
+        const ty = lampY + Math.sin(sway) * len;
+        const g = ctx.createLinearGradient(lx, lampY, tx, ty);
+        g.addColorStop(0, hexA(accent[0], 0.6 * v));
+        g.addColorStop(0.6, hexA(accent[0], 0.22 * v));
+        g.addColorStop(1, hexA(accent[0], 0));
+        ctx.fillStyle = g;
         ctx.beginPath();
-        ctx.moveTo(d.x + d.len * SL, d.y - d.len);
-        ctx.lineTo(d.x, d.y);
-        ctx.stroke();
-      }
-      for (const s of sparks) {
-        ctx.fillStyle = hexA(accent[0], (1 - s.age / 0.6) * v);
-        ctx.fillRect(s.x, s.y, 2, 2);
-      }
-      for (const d of drips) {
-        ctx.fillStyle = hexA(accent[0], Math.min(1, d.age * 3) * (1 - d.age / 1.4) * 0.8 * v);
-        ctx.fillRect(d.x - 1, d.y, 2, 2 + Math.min(4, d.v / 40));
+        ctx.moveTo(lx, lampY - 1.5);
+        ctx.lineTo(tx, ty - halfAt(len));
+        ctx.lineTo(tx, ty + halfAt(len));
+        ctx.lineTo(lx, lampY + 1.5);
+        ctx.closePath();
+        ctx.fill();
+        const glow = ctx.createRadialGradient(lx, lampY, 0, lx, lampY, 14);
+        glow.addColorStop(0, hexA(accent[0], 0.7 * v));
+        glow.addColorStop(1, hexA(accent[0], 0));
+        ctx.fillStyle = glow;
+        ctx.fillRect(lx - 14, lampY - 14, 28, 28);
       }
       ctx.globalCompositeOperation = 'source-over';
+      tower(ctx, v);
+      for (const s of ships) {
+        const d = s.x - lx;
+        // lit while the beam (which runs a few px above the waterline) reaches the ship
+        const lit = d > 0 && d < len ? clamp01(1 - d / (c.w - 30)) * v : 0;
+        ship(ctx, s, Math.min(1, s.age * 2) * v, lit);
+      }
     },
-    idle: () => v === 0 && drops.length === 0 && sparks.length === 0 && drips.length === 0,
+    idle: () => v === 0 && reach === 0 && ships.length === 0,
   };
 };
 
@@ -428,7 +469,7 @@ const rating: Make = (_W, _H, c, accent) => {
   };
 };
 
-const EFFECTS: Record<FxKind, Make> = { flame, siren, stars, matrix, typing, parlamonium, rating };
+const EFFECTS: Record<FxKind, Make> = { flame, siren, stars, matrix, typing, beacon, rating };
 
 export function attachFx(wrap: HTMLElement): void {
   const kind = wrap.dataset.fx as FxKind | undefined;

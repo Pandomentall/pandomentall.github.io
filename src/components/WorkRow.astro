@@ -4,7 +4,6 @@
 // .row-wrap holds the fx canvas (inset by FX_PAD) and the card, and the card's rectangle is
 // clipped out of the canvas, so the effect never touches the image or the text.
 import { Image } from 'astro:assets';
-import GameArt from './GameArt.astro';
 import ProjectLogo from './ProjectLogo.astro';
 import ArrowRight from '@tabler/icons/outline/arrow-right.svg';
 import { t, type Lang } from '../i18n/ui';
@@ -32,9 +31,7 @@ const meta = game ? [game.data.jam, game.data.engine] : d.tags.slice(0, 3);
     <div class="row__media">
       {
         d.thumb ? (
-          <Image src={d.thumb} alt="" width={640} format="webp" quality={78} />
-        ) : game?.data.art ? (
-          <GameArt id={game.data.art} />
+          <Image src={d.thumb} alt="" width={640} format="webp" quality={78} style={`object-position:${d.thumbPosition}`} />
         ) : project ? (
           <span class="row__logo">
             <ProjectLogo entry={project} size={72} />

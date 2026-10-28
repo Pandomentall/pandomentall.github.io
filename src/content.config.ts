@@ -39,8 +39,10 @@ const common = (image: SchemaContext['image']) => ({
   gallery: z.array(z.object({ src: image(), alt: z.string() })).default([]),
   // Row card: wide image, frame/glow colours in the item's own style, hover particle effect.
   thumb: image().optional(),
+  // CSS object-position for the thumb in the row card crop (screenshots read best from the top).
+  thumbPosition: z.string().default('0 0'),
   accent: z.tuple([z.string(), z.string()]).default(['#8cc8ec', '#a8cfae']),
-  fx: z.enum(['flame', 'siren', 'stars', 'matrix', 'typing', 'parlamonium', 'rating']).optional(),
+  fx: z.enum(['flame', 'siren', 'stars', 'matrix', 'typing', 'beacon', 'rating']).optional(),
   // Short achievement line shown on the card and detail hero (e.g. a jam placement).
   award: z.string().optional(),
 });
@@ -85,10 +87,8 @@ const games = defineCollection({
       engine: z.string().optional(),
       platforms: z.array(z.string()).default([]),
       jam: z.string().optional(),
-      // Code-drawn art for games without publishable media (see GameArt.astro).
-      art: z.enum(['ellam']).optional(),
       // Detail page backdrop; the games list always uses the zone's grid.
-      backdrop: z.enum(['grid', 'parlamonium', 'kitchen', 'sea', 'orbit']).default('grid'),
+      backdrop: z.enum(['grid', 'storm', 'kitchen', 'sea', 'orbit']).default('grid'),
     }),
 });
 

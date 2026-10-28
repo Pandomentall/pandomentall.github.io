@@ -7,7 +7,6 @@ import { Image } from 'astro:assets';
 import Base from '../layouts/Base.astro';
 import EmailLink from './EmailLink.astro';
 import ProjectLogo from './ProjectLogo.astro';
-import GameArt from './GameArt.astro';
 import ArrowRight from '@tabler/icons/outline/arrow-right.svg';
 import { person } from '../data/cv';
 import { listWorks } from '../lib/works';
@@ -110,11 +109,7 @@ const folders: Folder[] = [
                 {f.key === 'games' &&
                   games.slice(0, 3).map((g, k) => (
                     <span class={`paper paper--${k + 1} paper--shot`}>
-                      {g.data.thumb ? (
-                        <Image src={g.data.thumb} alt="" width={320} format="webp" quality={70} />
-                      ) : g.data.art ? (
-                        <GameArt id={g.data.art} />
-                      ) : null}
+                      {g.data.thumb && <Image src={g.data.thumb} alt="" width={320} format="webp" quality={70} />}
                     </span>
                   ))}
                 {f.key === 'blog' && (

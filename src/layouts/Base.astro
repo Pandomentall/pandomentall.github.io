@@ -15,7 +15,7 @@ import CloudFog from '@tabler/icons/outline/cloud-fog.svg';
 import CloudStorm from '@tabler/icons/outline/cloud-storm.svg';
 import ParlavanTrail from '../components/ParlavanTrail.astro';
 import Constellation from '../components/backdrops/Constellation.astro';
-import ParlamoniumRain from '../components/backdrops/ParlamoniumRain.astro';
+import Storm from '../components/backdrops/Storm.astro';
 import Kitchen from '../components/backdrops/Kitchen.astro';
 import NightSea from '../components/backdrops/NightSea.astro';
 import Orbit from '../components/backdrops/Orbit.astro';
@@ -39,7 +39,7 @@ interface Props {
   item?: string;
   zone?: Zone;
   // Game pages may bring their own world; default follows the zone.
-  backdrop?: 'constellation' | 'parlamonium' | 'kitchen' | 'sea' | 'orbit' | 'grid' | 'workbench';
+  backdrop?: 'constellation' | 'storm' | 'kitchen' | 'sea' | 'orbit' | 'grid' | 'workbench';
   title: string;
   description: string;
   noindex?: boolean;
@@ -125,7 +125,7 @@ const ogImage = abs(`/og/cv-${lang}.png`);
     <a class="skip-link" href="#main">{t(lang, 'nav.skip')}</a>
 
     {backdrop === 'constellation' && <Constellation />}
-    {backdrop === 'parlamonium' && <ParlamoniumRain />}
+    {backdrop === 'storm' && <Storm />}
     {backdrop === 'kitchen' && <Kitchen />}
     {backdrop === 'sea' && <NightSea />}
     {backdrop === 'orbit' && <Orbit />}

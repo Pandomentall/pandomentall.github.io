@@ -1,0 +1,141 @@
+---
+// Leeway detail backdrop: the strait on a rainy night, seen from the watch tower. Slanted
+// rain over everything, a distant lighthouse on the horizon whose beam turns flat across
+// the water (long and faint sideways, a short warm flare when it faces us), and now and
+// then a far lightning flash that lifts the whole sky for a moment.
+// Very translucent; reduced motion: one still frame, no rotation, no lightning.
+---
+
+<div class="backdrop storm" aria-hidden="true">
+  <div class="storm__flash"></div>
+  <canvas class="storm__canvas"></canvas>
+</div>
+
+<script>
+  import { fitCanvas, reducedMotion } from '../../scripts/parlavan';
+
+  const canvas = document.querySelector<HTMLCanvasElement>('.storm__canvas');
+  const flash = document.querySelector<HTMLElement>('.storm__flash');
+  if (canvas && flash) start(canvas, flash);
+
+  function start(canvas: HTMLCanvasElement, flash: HTMLElement) {
+    const SL = 0.2;
+    const PERIOD = 11; // s per beam turn
+    let ctx = fitCanvas(canvas);
+    let w = canvas.clientWidth;
+    let h = canvas.clientHeight;
+    let drops: { x: number; y: number; v: number; len: number; a: number }[] = [];
+
+    const reset = () => {
+      ctx = fitCanvas(canvas);
+      w = canvas.clientWidth;
+      h = canvas.clientHeight;
+      drops = Array.from({ length: Math.min(160, Math.round((w * h) / 9000)) }, () => ({
+        x: Math.random() * (w + h * SL),
+        y: Math.random() * h,
+        v: 520 + Math.random() * 360,
+        len: 12 + Math.random() * 18,
+        a: 0.05 + Math.random() * 0.09,
+      }));
+    };
+
+    const beam = (sx: number, sy: number, ang: number) => {
+      // ground-plane direction, squashed onto the horizon
+      const dx = Math.cos(ang);
+      const facing = Math.max(0, Math.sin(ang)); // 1 = pointing at the viewer
+      const len = w * 0.55 * (0.25 + 0.75 * Math.abs(dx));
+      const tx = sx + dx * len;
+      const spread = 4 + 34 * facing;
+      const g = ctx.createLinearGradient(sx, sy, tx, sy);
+      const a = 0.05 + 0.07 * facing;
+      g.addColorStop(0, `rgba(255,214,150,${a.toFixed(3)})`);
+      g.addColorStop(1, 'rgba(255,214,150,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.moveTo(sx, sy - 1.5);
+      ctx.lineTo(tx, sy - spread);
+      ctx.lineTo(tx, sy + spread * 0.6);
+      ctx.lineTo(sx, sy + 1.5);
+      ctx.closePath();
+      ctx.fill();
+      return facing;
+    };
+
+    const draw = (t: number, dt: number) => {
+      ctx.clearRect(0, 0, w, h);
+      const sx = w * 0.78;
+      const sy = h * 0.62;
+      const ang = (t / PERIOD) * Math.PI * 2;
+      ctx.globalCompositeOperation = 'lighter';
+      const f = Math.max(beam(sx, sy, ang), beam(sx, sy, ang + Math.PI));
+      const r = 6 + 60 * Math.pow(f, 4);
+      const glow = ctx.createRadialGradient(sx, sy, 0, sx, sy, r);
+      glow.addColorStop(0, `rgba(255,224,170,${(0.25 + 0.35 * Math.pow(f, 4)).toFixed(3)})`);
+      glow.addColorStop(1, 'rgba(255,224,170,0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(sx - r, sy - r, r * 2, r * 2);
+      ctx.globalCompositeOperation = 'source-over';
+
+      ctx.lineWidth = 1;
+      ctx.lineCap = 'round';
+      for (const d of drops) {
+        d.y += d.v * dt;
+        d.x -= d.v * dt * SL;
+        if (d.y > h + d.len) {
+          d.y = -d.len;
+          d.x = Math.random() * (w + h * SL);
+        }
+        ctx.strokeStyle = `rgba(170,195,220,${d.a.toFixed(3)})`;
+        ctx.beginPath();
+        ctx.moveTo(d.x + d.len * SL, d.y - d.len);
+        ctx.lineTo(d.x, d.y);
+        ctx.stroke();
+      }
+    };
+
+    reset();
+    addEventListener('resize', reset);
+
+    if (reducedMotion()) {
+      draw(PERIOD * 0.2, 0);
+      return;
+    }
+
+    // far lightning: a double flicker every 14-30 s
+    const strike = () => {
+      flash.animate(
+        [{ opacity: 0 }, { opacity: 1, offset: 0.06 }, { opacity: 0.2, offset: 0.16 }, { opacity: 0.8, offset: 0.24 }, { opacity: 0 }],
+        { duration: 1400, easing: 'ease-out' },
+      );
+      setTimeout(strike, 14000 + Math.random() * 16000);
+    };
+    setTimeout(strike, 6000 + Math.random() * 6000);
+
+    const t0 = performance.now();
+    let last = t0;
+    const tick = (now: number) => {
+      draw((now - t0) / 1000, Math.min(0.05, (now - last) / 1000));
+      last = now;
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
+</script>
+
+<style>
+  .storm {
+    background: linear-gradient(to bottom, rgb(60 75 95 / 0.18), transparent 50%, rgb(15 25 35 / 0.3) 100%);
+  }
+  .storm__canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .storm__flash {
+    position: absolute;
+    inset: 0 0 40% 0;
+    background: radial-gradient(ellipse at 30% 0%, rgb(200 215 240 / 0.12), transparent 70%);
+    opacity: 0;
+  }
+</style>
