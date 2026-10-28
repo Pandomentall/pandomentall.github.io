@@ -1,13 +1,15 @@
 ---
-// Leeway detail backdrop: the strait on a rainy night, seen from the watch tower. Slanted
-// rain over everything, a distant lighthouse on the horizon whose beam turns flat across
-// the water (long and faint sideways, a short warm flare when it faces us), and now and
-// then a far lightning flash that lifts the whole sky for a moment.
-// Very translucent; reduced motion: one still frame, no rotation, no lightning.
+// Leeway detail backdrop: the strait on a stormy night, seen from the watch tower.
+// Layers, back to front: drifting cloud banks · far lightning (sky flash, now and then a
+// bolt) · horizon with a lighthouse on a rock islet whose beam turns flat over the water
+// (long and thin sideways, a wide flare when it faces us) · ships crossing the horizon with
+// their navigation lights, lit up when the beam passes · swell lines whose crests catch the
+// beam · three depths of slanted rain, brighter inside the beam.
+// The scene sits in the lower part of the screen so the page text stays readable.
+// Reduced motion: one still frame, no rotation, no lightning.
 ---
 
 <div class="backdrop storm" aria-hidden="true">
-  <div class="storm__flash"></div>
   <canvas class="storm__canvas"></canvas>
 </div>
 
@@ -15,106 +17,351 @@
   import { fitCanvas, reducedMotion } from '../../scripts/parlavan';
 
   const canvas = document.querySelector<HTMLCanvasElement>('.storm__canvas');
-  const flash = document.querySelector<HTMLElement>('.storm__flash');
-  if (canvas && flash) start(canvas, flash);
+  if (canvas) start(canvas);
 
-  function start(canvas: HTMLCanvasElement, flash: HTMLElement) {
-    const SL = 0.2;
-    const PERIOD = 11; // s per beam turn
+  type Drop = { x: number; y: number; v: number; len: number; a: number; z: number };
+  type Ship = { x: number; v: number; len: number; tall: number; dir: 1 | -1; kind: number };
+  type Cloud = { x: number; y: number; rx: number; ry: number; v: number; a: number };
+  type Bolt = { pts: [number, number][]; branch: [number, number][] };
+
+  function start(canvas: HTMLCanvasElement) {
+    const PERIOD = 9; // s per beam turn
+    const SILHOUETTE = 'rgba(6,8,18,0.82)';
+    const BEAM = '255,214,150';
     let ctx = fitCanvas(canvas);
-    let w = canvas.clientWidth;
-    let h = canvas.clientHeight;
-    let drops: { x: number; y: number; v: number; len: number; a: number }[] = [];
+    let w = 0;
+    let h = 0;
+    let horizon = 0;
+    let lamp = { x: 0, y: 0 };
+    let towerH = 0;
+    let drops: Drop[] = [];
+    let clouds: Cloud[] = [];
+    const ships: Ship[] = [];
+    let nextShip = 2;
+    let flash = 0;
+    let bolt: Bolt | null = null;
+    let nextStrike = 5 + Math.random() * 5;
+    let gust = 0;
+
+    const rnd = (a: number, b: number) => a + Math.random() * (b - a);
 
     const reset = () => {
       ctx = fitCanvas(canvas);
       w = canvas.clientWidth;
       h = canvas.clientHeight;
-      drops = Array.from({ length: Math.min(160, Math.round((w * h) / 9000)) }, () => ({
-        x: Math.random() * (w + h * SL),
-        y: Math.random() * h,
-        v: 520 + Math.random() * 360,
-        len: 12 + Math.random() * 18,
-        a: 0.05 + Math.random() * 0.09,
+      horizon = h * 0.74;
+      towerH = Math.max(46, Math.min(96, h * 0.11));
+      lamp = { x: w * (w < 700 ? 0.82 : 0.88), y: horizon - towerH };
+      const n = Math.min(260, Math.round((w * h) / 5200));
+      drops = Array.from({ length: n }, () => {
+        const z = Math.random(); // 0 far, 1 near
+        return { x: rnd(0, w + 200), y: rnd(0, h), v: 380 + z * 700, len: 8 + z * 26, a: 0.05 + z * 0.17, z };
+      });
+      clouds = Array.from({ length: 9 }, () => ({
+        x: rnd(-0.2, 1.2) * w,
+        y: rnd(-0.05, 0.32) * h,
+        rx: rnd(0.22, 0.5) * w,
+        ry: rnd(0.06, 0.12) * h,
+        v: rnd(4, 11),
+        a: rnd(0.18, 0.4),
       }));
     };
 
-    const beam = (sx: number, sy: number, ang: number) => {
-      // ground-plane direction, squashed onto the horizon
+    // beams: ground-plane angle -> screen wedge on the horizon line
+    const beamInfo = (ang: number) => {
       const dx = Math.cos(ang);
-      const facing = Math.max(0, Math.sin(ang)); // 1 = pointing at the viewer
-      const len = w * 0.55 * (0.25 + 0.75 * Math.abs(dx));
-      const tx = sx + dx * len;
-      const spread = 4 + 34 * facing;
-      const g = ctx.createLinearGradient(sx, sy, tx, sy);
-      const a = 0.05 + 0.07 * facing;
-      g.addColorStop(0, `rgba(255,214,150,${a.toFixed(3)})`);
-      g.addColorStop(1, 'rgba(255,214,150,0)');
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.moveTo(sx, sy - 1.5);
-      ctx.lineTo(tx, sy - spread);
-      ctx.lineTo(tx, sy + spread * 0.6);
-      ctx.lineTo(sx, sy + 1.5);
-      ctx.closePath();
-      ctx.fill();
-      return facing;
+      const facing = Math.max(0, Math.sin(ang)); // 1 = towards the viewer
+      const len = w * 1.05 * (0.12 + 0.88 * Math.abs(dx));
+      return { tx: lamp.x + dx * len, len, spread: 5 + 70 * facing, facing, dx };
+    };
+    // 0..1 brightness of a point inside a beam wedge
+    const inBeam = (b: ReturnType<typeof beamInfo>, x: number, y: number) => {
+      const d = (x - lamp.x) / (b.tx - lamp.x);
+      if (d <= 0 || d >= 1) return 0;
+      const half = 2 + b.spread * d;
+      const off = Math.abs(y - lamp.y);
+      return off < half ? (1 - off / half) * (1 - d) : 0;
     };
 
-    const draw = (t: number, dt: number) => {
-      ctx.clearRect(0, 0, w, h);
-      const sx = w * 0.78;
-      const sy = h * 0.62;
-      const ang = (t / PERIOD) * Math.PI * 2;
-      ctx.globalCompositeOperation = 'lighter';
-      const f = Math.max(beam(sx, sy, ang), beam(sx, sy, ang + Math.PI));
-      const r = 6 + 60 * Math.pow(f, 4);
-      const glow = ctx.createRadialGradient(sx, sy, 0, sx, sy, r);
-      glow.addColorStop(0, `rgba(255,224,170,${(0.25 + 0.35 * Math.pow(f, 4)).toFixed(3)})`);
-      glow.addColorStop(1, 'rgba(255,224,170,0)');
-      ctx.fillStyle = glow;
-      ctx.fillRect(sx - r, sy - r, r * 2, r * 2);
-      ctx.globalCompositeOperation = 'source-over';
+    const drawClouds = (dt: number) => {
+      for (const c of clouds) {
+        c.x += c.v * dt;
+        if (c.x - c.rx > w) c.x = -c.rx;
+        const g = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, c.rx);
+        g.addColorStop(0, `rgba(14,16,32,${c.a})`);
+        g.addColorStop(1, 'rgba(14,16,32,0)');
+        ctx.save();
+        ctx.translate(c.x, c.y);
+        ctx.scale(1, c.ry / c.rx);
+        ctx.translate(-c.x, -c.y);
+        ctx.fillStyle = g;
+        ctx.fillRect(c.x - c.rx, c.y - c.rx, c.rx * 2, c.rx * 2);
+        if (flash > 0.02) {
+          const lg = ctx.createRadialGradient(c.x, c.y + c.rx * 0.4, 0, c.x, c.y, c.rx);
+          lg.addColorStop(0, `rgba(170,185,225,${(0.22 * flash).toFixed(3)})`);
+          lg.addColorStop(1, 'rgba(170,185,225,0)');
+          ctx.fillStyle = lg;
+          ctx.fillRect(c.x - c.rx, c.y - c.rx, c.rx * 2, c.rx * 2);
+        }
+        ctx.restore();
+      }
+    };
 
-      ctx.lineWidth = 1;
+    const makeBolt = (): Bolt => {
+      const x0 = rnd(0.08, 0.7) * w;
+      const pts: [number, number][] = [[x0, h * rnd(0.05, 0.15)]];
+      const bottom = horizon - rnd(0, 8);
+      while (pts[pts.length - 1][1] < bottom) {
+        const [px, py] = pts[pts.length - 1];
+        pts.push([px + rnd(-26, 26), Math.min(bottom, py + rnd(14, 34))]);
+      }
+      const from = pts[Math.floor(pts.length * rnd(0.2, 0.5))];
+      const branch: [number, number][] = [from];
+      for (let i = 0; i < 4; i++) {
+        const [px, py] = branch[branch.length - 1];
+        branch.push([px + rnd(8, 30) * (x0 > w / 2 ? -1 : 1), py + rnd(10, 24)]);
+      }
+      return { pts, branch };
+    };
+
+    const strokePath = (pts: [number, number][], width: number, a: number) => {
+      ctx.lineWidth = width;
+      ctx.strokeStyle = `rgba(220,228,255,${a.toFixed(3)})`;
+      ctx.beginPath();
+      pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+      ctx.stroke();
+    };
+
+    const drawIslet = () => {
+      ctx.fillStyle = SILHOUETTE;
+      const x = lamp.x;
+      const y = horizon;
+      const tw = towerH * 0.16;
+      ctx.beginPath(); // rock
+      ctx.moveTo(x - towerH * 0.9, y + 2);
+      ctx.lineTo(x - towerH * 0.55, y - towerH * 0.1);
+      ctx.lineTo(x - towerH * 0.2, y - towerH * 0.16);
+      ctx.lineTo(x + towerH * 0.3, y - towerH * 0.12);
+      ctx.lineTo(x + towerH * 0.75, y - towerH * 0.03);
+      ctx.lineTo(x + towerH * 1.1, y + 2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.beginPath(); // tapered tower
+      ctx.moveTo(x - tw, y - towerH * 0.12);
+      ctx.lineTo(x - tw * 0.62, lamp.y + towerH * 0.1);
+      ctx.lineTo(x + tw * 0.62, lamp.y + towerH * 0.1);
+      ctx.lineTo(x + tw, y - towerH * 0.12);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillRect(x - tw * 0.95, lamp.y + towerH * 0.06, tw * 1.9, towerH * 0.04); // gallery
+      ctx.fillRect(x - tw * 0.45, lamp.y - towerH * 0.07, tw * 0.9, towerH * 0.04); // roof
+      // keeper's house
+      ctx.fillRect(x + tw * 1.4, y - towerH * 0.2, towerH * 0.28, towerH * 0.1);
+    };
+
+    const drawShip = (s: Ship, lit: number) => {
+      const y = horizon + 1;
+      const bow = s.dir; // bow points along travel
+      const L = s.len;
+      ctx.fillStyle = SILHOUETTE;
+      ctx.beginPath();
+      ctx.moveTo(s.x - (L / 2) * bow, y - L * 0.07);
+      ctx.lineTo(s.x + (L / 2 + L * 0.05) * bow, y - L * 0.08);
+      ctx.lineTo(s.x + (L / 2 - L * 0.03) * bow, y);
+      ctx.lineTo(s.x - (L / 2 - L * 0.02) * bow, y);
+      ctx.closePath();
+      ctx.fill();
+      // superstructure aft, cargo or a crane forward
+      const aft = s.x - (L * 0.36) * bow;
+      ctx.fillRect(Math.min(aft, aft + L * 0.16 * bow), y - L * 0.07 - s.tall, L * 0.16, s.tall);
+      if (s.kind === 0) ctx.fillRect(Math.min(s.x - L * 0.15 * bow, s.x + L * 0.3 * bow), y - L * 0.07 - s.tall * 0.4, L * 0.45, s.tall * 0.4);
+      else ctx.fillRect(s.x + L * 0.1 * bow, y - L * 0.07 - s.tall * 1.1, 1.5, s.tall * 1.1);
+      // nav lights: masthead white, side light red/green by heading
+      const mx = aft + L * 0.08 * bow;
+      const my = y - L * 0.07 - s.tall - 3;
+      const dot = (x: number, yy: number, rgb: string, a: number, r: number) => {
+        const g = ctx.createRadialGradient(x, yy, 0, x, yy, r);
+        g.addColorStop(0, `rgba(${rgb},${a})`);
+        g.addColorStop(1, `rgba(${rgb},0)`);
+        ctx.fillStyle = g;
+        ctx.fillRect(x - r, yy - r, r * 2, r * 2);
+      };
+      ctx.globalCompositeOperation = 'lighter';
+      dot(mx, my, '255,244,220', 0.75, 5);
+      dot(s.x, y - L * 0.08, s.dir > 0 ? '90,230,140' : '255,80,80', 0.7, 4);
+      dot(aft + L * 0.02 * bow, y - L * 0.07 - s.tall * 0.5, '255,210,140', 0.35, 3);
+      if (lit > 0.02) {
+        const g = ctx.createRadialGradient(s.x, y - s.tall, 0, s.x, y - s.tall, L * 0.7);
+        g.addColorStop(0, `rgba(${BEAM},${(0.35 * lit).toFixed(3)})`);
+        g.addColorStop(1, `rgba(${BEAM},0)`);
+        ctx.fillStyle = g;
+        ctx.fillRect(s.x - L * 0.7, y - s.tall - L * 0.7, L * 1.4, L * 1.4);
+      }
+      ctx.globalCompositeOperation = 'source-over';
+    };
+
+    const drawSea = (t: number, beams: ReturnType<typeof beamInfo>[]) => {
+      const sea = ctx.createLinearGradient(0, horizon, 0, h);
+      sea.addColorStop(0, 'rgba(10,14,26,0.55)');
+      sea.addColorStop(1, 'rgba(6,9,18,0.7)');
+      ctx.fillStyle = sea;
+      ctx.fillRect(0, horizon, w, h - horizon);
+      const LINES = 9;
+      for (let i = 0; i < LINES; i++) {
+        const k = i / (LINES - 1);
+        const y0 = horizon + 3 + (h - horizon) * Math.pow(k, 1.5);
+        const amp = 1.5 + 8 * k;
+        const len = 160 + 260 * k;
+        const speed = 0.1 + 0.22 * k;
+        ctx.lineWidth = 1 + k * 0.6;
+        ctx.beginPath();
+        for (let x = -10; x <= w + 10; x += 10) {
+          const y = y0 + amp * Math.sin((x / len) * Math.PI * 2 - t * speed * Math.PI * 2 + i * 1.9) + amp * 0.4 * Math.sin((x / (len * 0.37)) * Math.PI * 2 + t * speed * 3 + i);
+          if (x === -10) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = `rgba(120,150,185,${(0.05 + 0.08 * k).toFixed(3)})`;
+        ctx.stroke();
+      }
+      // beam glare on the water: a streak under each beam, strongest near the lamp
+      ctx.globalCompositeOperation = 'lighter';
+      for (const b of beams) {
+        const a = 0.05 + 0.18 * b.facing;
+        const g = ctx.createLinearGradient(lamp.x, 0, b.tx, 0);
+        g.addColorStop(0, `rgba(${BEAM},${a.toFixed(3)})`);
+        g.addColorStop(1, `rgba(${BEAM},0)`);
+        ctx.fillStyle = g;
+        const x0 = Math.min(lamp.x, b.tx);
+        ctx.fillRect(x0, horizon + 1, Math.abs(b.tx - lamp.x), 3 + 24 * b.facing);
+      }
+      ctx.globalCompositeOperation = 'source-over';
+    };
+
+    const drawBeams = (beams: ReturnType<typeof beamInfo>[]) => {
+      ctx.globalCompositeOperation = 'lighter';
+      let f = 0;
+      for (const b of beams) {
+        f = Math.max(f, b.facing);
+        const a = 0.16 + 0.14 * b.facing;
+        const g = ctx.createLinearGradient(lamp.x, lamp.y, b.tx, lamp.y);
+        g.addColorStop(0, `rgba(${BEAM},${a.toFixed(3)})`);
+        g.addColorStop(0.5, `rgba(${BEAM},${(a * 0.45).toFixed(3)})`);
+        g.addColorStop(1, `rgba(${BEAM},0)`);
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.moveTo(lamp.x, lamp.y - 2);
+        ctx.lineTo(b.tx, lamp.y - b.spread);
+        ctx.lineTo(b.tx, lamp.y + b.spread * 0.55);
+        ctx.lineTo(lamp.x, lamp.y + 2);
+        ctx.closePath();
+        ctx.fill();
+      }
+      const r = 10 + 120 * Math.pow(f, 5);
+      const glow = ctx.createRadialGradient(lamp.x, lamp.y, 0, lamp.x, lamp.y, r);
+      glow.addColorStop(0, `rgba(255,228,180,${(0.55 + 0.35 * Math.pow(f, 5)).toFixed(3)})`);
+      glow.addColorStop(0.25, `rgba(${BEAM},${(0.18 + 0.2 * Math.pow(f, 5)).toFixed(3)})`);
+      glow.addColorStop(1, `rgba(${BEAM},0)`);
+      ctx.fillStyle = glow;
+      ctx.fillRect(lamp.x - r, lamp.y - r, r * 2, r * 2);
+      ctx.globalCompositeOperation = 'source-over';
+    };
+
+    const drawRain = (dt: number, t: number, beams: ReturnType<typeof beamInfo>[]) => {
+      const slant = 0.16 + 0.1 * Math.sin(t * 0.21) + gust;
       ctx.lineCap = 'round';
       for (const d of drops) {
         d.y += d.v * dt;
-        d.x -= d.v * dt * SL;
+        d.x -= d.v * dt * slant;
         if (d.y > h + d.len) {
           d.y = -d.len;
-          d.x = Math.random() * (w + h * SL);
+          d.x = rnd(0, w + 200);
         }
-        ctx.strokeStyle = `rgba(170,195,220,${d.a.toFixed(3)})`;
+        if (d.x < -40) d.x += w + 200;
+        let lit = 0;
+        for (const b of beams) lit = Math.max(lit, inBeam(b, d.x, d.y));
+        const a = d.a + lit * 0.5 + flash * 0.15 * d.z;
+        ctx.lineWidth = 0.8 + d.z * 0.7;
+        ctx.strokeStyle = lit > 0.05 ? `rgba(255,226,180,${Math.min(0.8, a).toFixed(3)})` : `rgba(165,185,215,${Math.min(0.6, a).toFixed(3)})`;
         ctx.beginPath();
-        ctx.moveTo(d.x + d.len * SL, d.y - d.len);
+        ctx.moveTo(d.x + d.len * slant, d.y - d.len);
         ctx.lineTo(d.x, d.y);
         ctx.stroke();
       }
+    };
+
+    const frame = (t: number, dt: number) => {
+      ctx.clearRect(0, 0, w, h);
+      // weather timers
+      gust = 0.12 * Math.max(0, Math.sin(t * 0.13)) * Math.max(0, Math.sin(t * 0.47));
+      flash *= Math.pow(0.02, dt); // fast decay
+      nextStrike -= dt;
+      if (dt > 0 && nextStrike <= 0) {
+        flash = 1;
+        bolt = Math.random() < 0.55 ? makeBolt() : null;
+        nextStrike = rnd(9, 22);
+        setTimeout(() => (flash = Math.max(flash, 0.7)), 140); // double flicker
+      }
+      // sky flash
+      if (flash > 0.01) {
+        const g = ctx.createLinearGradient(0, 0, 0, horizon);
+        g.addColorStop(0, `rgba(170,185,230,${(0.13 * flash).toFixed(3)})`);
+        g.addColorStop(1, 'rgba(170,185,230,0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, w, horizon);
+      }
+      drawClouds(dt);
+      if (bolt && flash > 0.05) {
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        strokePath(bolt.pts, 4, 0.12 * flash);
+        strokePath(bolt.pts, 1.4, 0.75 * flash);
+        strokePath(bolt.branch, 1, 0.45 * flash);
+      }
+
+      const ang = (t / PERIOD) * Math.PI * 2;
+      const beams = [beamInfo(ang), beamInfo(ang + Math.PI)];
+
+      // ships on the horizon
+      nextShip -= dt;
+      if (dt > 0 && nextShip <= 0 && ships.length < 2) {
+        const dir = Math.random() < 0.5 ? 1 : -1;
+        const len = rnd(80, 150) * Math.min(1, w / 1200);
+        ships.push({ x: dir > 0 ? -len : w + len, v: rnd(9, 16), len, tall: len * rnd(0.12, 0.2), dir, kind: Math.random() < 0.6 ? 0 : 1 });
+        nextShip = rnd(14, 30);
+      }
+      for (let i = ships.length - 1; i >= 0; i--) {
+        const s = ships[i];
+        s.x += s.v * s.dir * dt;
+        if (s.x < -s.len * 2 || s.x > w + s.len * 2) ships.splice(i, 1);
+      }
+
+      drawSea(t, beams);
+      for (const s of ships) {
+        let lit = 0;
+        for (const b of beams) {
+          const d = (s.x - lamp.x) / (b.tx - lamp.x);
+          if (d > 0 && d < 1) lit = Math.max(lit, (1 - d) * (0.4 + 0.6 * b.facing));
+        }
+        drawShip(s, lit);
+      }
+      drawIslet();
+      drawBeams(beams);
+      drawRain(dt, t, beams);
     };
 
     reset();
     addEventListener('resize', reset);
 
     if (reducedMotion()) {
-      draw(PERIOD * 0.2, 0);
+      ships.push({ x: w * 0.3, v: 0, len: 90, tall: 14, dir: 1, kind: 0 });
+      frame(PERIOD * 0.18, 0);
       return;
     }
-
-    // far lightning: a double flicker every 14-30 s
-    const strike = () => {
-      flash.animate(
-        [{ opacity: 0 }, { opacity: 1, offset: 0.06 }, { opacity: 0.2, offset: 0.16 }, { opacity: 0.8, offset: 0.24 }, { opacity: 0 }],
-        { duration: 1400, easing: 'ease-out' },
-      );
-      setTimeout(strike, 14000 + Math.random() * 16000);
-    };
-    setTimeout(strike, 6000 + Math.random() * 6000);
-
+    ships.push({ x: w * rnd(0.2, 0.5), v: rnd(9, 16), len: rnd(90, 140) * Math.min(1, w / 1200), tall: 16, dir: 1, kind: 0 });
     const t0 = performance.now();
     let last = t0;
     const tick = (now: number) => {
-      draw((now - t0) / 1000, Math.min(0.05, (now - last) / 1000));
+      frame((now - t0) / 1000, Math.min(0.05, (now - last) / 1000));
       last = now;
       requestAnimationFrame(tick);
     };
@@ -124,18 +371,12 @@
 
 <style>
   .storm {
-    background: linear-gradient(to bottom, rgb(60 75 95 / 0.18), transparent 50%, rgb(15 25 35 / 0.3) 100%);
+    background: linear-gradient(to bottom, rgb(40 46 70 / 0.35), transparent 45%, transparent 70%, rgb(6 9 18 / 0.4) 100%);
   }
   .storm__canvas {
     position: absolute;
     inset: 0;
     width: 100%;
     height: 100%;
-  }
-  .storm__flash {
-    position: absolute;
-    inset: 0 0 40% 0;
-    background: radial-gradient(ellipse at 30% 0%, rgb(200 215 240 / 0.12), transparent 70%);
-    opacity: 0;
   }
 </style>
