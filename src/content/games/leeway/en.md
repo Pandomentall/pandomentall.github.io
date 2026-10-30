@@ -36,4 +36,4 @@ Ships are impatient. Each one waiting calls on its own line, and an unanswered o
 
 When the weather turns, so does the work. On stormy days the things worth noticing are not only ships, and whatever you ignore has a price.
 
-I develop it solo in Unity with URP; the ships, the sea, the weather and most of the sound are generated in code.
+Umut and I are developing it in Unity with URP; the ships, the sea, the weather and most of the sound are generated in code.
