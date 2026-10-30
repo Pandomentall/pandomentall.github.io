@@ -24,6 +24,8 @@ clips:
   - { src: /games/leeway/durbun.webm, title: "Weighing a ship through binoculars" }
   - { src: /games/leeway/projektor.webm, title: "The searchlight at dusk" }
   - { src: /games/leeway/firtina.webm, title: "The storm and a ship burning on the horizon" }
+links:
+  steam: https://store.steampowered.com/app/5518310/Leeway_Lightkeeper/
 fx: beacon
 backdrop: storm
 ---

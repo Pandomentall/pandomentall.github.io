@@ -24,6 +24,8 @@ clips:
   - { src: /games/leeway/durbun.webm, title: "Dürbünle gemiyi tartmak" }
   - { src: /games/leeway/projektor.webm, title: "Alacakaranlıkta projektör" }
   - { src: /games/leeway/firtina.webm, title: "Fırtına ve ufukta yanan gemi" }
+links:
+  steam: https://store.steampowered.com/app/5518310/Leeway_Lightkeeper/
 fx: beacon
 backdrop: storm
 ---
