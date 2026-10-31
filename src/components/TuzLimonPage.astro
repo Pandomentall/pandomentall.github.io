@@ -1,0 +1,944 @@
+---
+// Tuz Limon's stand-alone shop front (/tuzlimon), the address PR material links to. Own header,
+// footer, icon and social card; palette and rules from the press kit: the colour mascot on a
+// light surface is always the sticker version, the name in big type is always the wordmark.
+// One motif: salt falls behind the mascot and melts away on the wordmark (script below).
+import '@fontsource-variable/bricolage-grotesque';
+import { getImage } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import EmailLink from './EmailLink.astro';
+import FitImage from './FitImage.astro';
+import { listWorks, slugOf } from '../lib/works';
+import { other, pathFor, t, type Lang } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const alt = other(lang);
+
+const games = await listWorks('games', lang);
+const lead = games[0];
+const earlier = games.slice(1);
+const steam = lead.data.links.steam;
+const itch = earlier.find((g) => g.data.links.itch)?.data.links.itch;
+// Full-size versions for the gallery links (opened in a new tab).
+const gallery = await Promise.all(
+  lead.data.gallery.map(async (g) => ({ ...g, full: (await getImage({ src: g.src, width: 1600, format: 'webp' })).src })),
+);
+---
+
+<Base
+  lang={lang}
+  route="tuzlimon"
+  zone="studio"
+  bare
+  favicon="/tuzlimon/favicon.svg"
+  socialImage="/tuzlimon/og.png"
+  title="Tuz Limon"
+  description={t(lang, 'studio.meta')}
+>
+  <section class="hero" id="top" data-salt>
+    <canvas class="hero__salt" aria-hidden="true"></canvas>
+    <nav class="bar" aria-label="Tuz Limon">
+      <a href="#oyunlar">{t(lang, 'studio.nav.games')}</a>
+      <a href="#birlikte">{t(lang, 'studio.nav.collab')}</a>
+      <a href="#basin">{t(lang, 'studio.nav.press')}</a>
+      <a class="bar__lang" href={pathFor('tuzlimon', alt)} hreflang={alt} lang={alt} aria-label={t(lang, 'lang.switchLabel')}>
+        {alt.toUpperCase()}
+      </a>
+    </nav>
+    <div class="hero__stage">
+      <p class="hero__tag">
+        {t(lang, 'studio.tag').split(' ').map((word) => <span>{word} </span>)}
+      </p>
+      <img class="hero__mascot" src="/tuzlimon/mascot-sticker.svg" alt="" width="1024" height="1024" />
+      <p class="hero__tag2">{t(lang, 'studio.tag2')}</p>
+    </div>
+    <h1 class="hero__name">
+      <img src="/tuzlimon/wordmark-night.svg" alt="Tuz Limon" width="1200" height="247" />
+    </h1>
+  </section>
+
+  <section class="lead" id="oyunlar">
+    <div class="wrap lead__grid">
+      <div class="lead__text">
+        <p class="stamp">{t(lang, 'studio.now')}</p>
+        <h2>{lead.data.title}</h2>
+        <p class="lead__with">{t(lang, 'studio.with')}</p>
+        <p class="lead__sum">{lead.data.summary}</p>
+        <div class="lead__cta">
+          {steam && <a class="btn btn--lemon" href={steam}>{t(lang, 'studio.wishlist')}</a>}
+          <a class="btn btn--line" href={pathFor('games', lang, slugOf(lead))}>{t(lang, 'studio.details')}</a>
+        </div>
+      </div>
+      <a class="lead__clip" href={steam}>
+        <video
+          data-clip
+          src="/tuzlimon/leeway-outro.webm"
+          poster="/tuzlimon/leeway-outro.webp"
+          width="1280"
+          height="720"
+          muted
+          loop
+          playsinline
+          preload="metadata"
+          aria-label={lead.data.title}
+        ></video>
+      </a>
+    </div>
+    <div class="wrap lead__media">
+      <h3>{t(lang, 'detail.clips')}</h3>
+      <ul class="clips">
+        {
+          lead.data.clips.map((c) => (
+            <li>
+              <figure>
+                <video src={c.src} muted loop playsinline preload="metadata" aria-label={c.title} data-clip />
+                <figcaption>{c.title}</figcaption>
+              </figure>
+            </li>
+          ))
+        }
+      </ul>
+      <h3>{t(lang, 'detail.gallery')}</h3>
+      <ul class="shots">
+        {
+          gallery.map((g) => (
+            <li>
+              <a href={g.full} target="_blank" rel="noopener">
+                <FitImage src={g.src} alt={g.alt} width={640} />
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <section class="earlier">
+    <div class="wrap">
+      <h2 class="big">{t(lang, 'studio.earlier')}</h2>
+      <ul class="cards">
+        {
+          earlier.map((g) => (
+            <li>
+              <a class="card" href={pathFor('games', lang, slugOf(g))} style={`--hit:${g.data.accent[0]}`}>
+                <span class="card__art">
+                  <FitImage src={g.data.thumb!} width={720} />
+                </span>
+                <span class="card__title">{g.data.title}</span>
+                <span class="card__meta">{g.data.genre}</span>
+                {g.data.jam && <span class="card__meta">{g.data.jam}</span>}
+                {g.data.award && <span class="card__award">{g.data.award}</span>}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <section class="collab" id="birlikte">
+    <div class="wrap collab__grid">
+      <div class="collab__head">
+        <h2 class="big">{t(lang, 'studio.collab')}</h2>
+        <p>{t(lang, 'studio.collab.lead')}</p>
+        <div class="collab__mail"><EmailLink lang={lang} /></div>
+        <ul class="collab__social">
+          {['ender.aygun', 'tuz.limon'].map((handle) => (
+            <li>
+              <a href={`https://www.instagram.com/${handle}/`} aria-label={`Instagram: ${handle}`}>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="3" y="3" width="18" height="18" rx="5" />
+                  <circle cx="12" cy="12" r="4" />
+                  <circle class="dot" cx="17.2" cy="6.8" r="1.1" />
+                </svg>
+                {handle}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <ul class="offers">
+        <li>
+          <h3>{t(lang, 'studio.collab.team')}</h3>
+          <p>{t(lang, 'studio.collab.team.body')}</p>
+        </li>
+        <li>
+          <h3>{t(lang, 'studio.collab.publish')}</h3>
+          <p>{t(lang, 'studio.collab.publish.body')}</p>
+          <div class="offers__links">
+            {steam && <a href={steam}>Steam</a>}
+            <a href="#basin">{t(lang, 'studio.press')}</a>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <footer class="end" id="basin">
+    <div class="wrap end__grid">
+      <img class="end__logo" src="/tuzlimon/logo-dark.svg" alt="Tuz Limon" width="1000" height="1116" loading="lazy" />
+      <div>
+        <h2 class="big">{t(lang, 'studio.press')}</h2>
+        <p class="end__body">{t(lang, 'studio.press.body')}</p>
+        <a class="btn btn--lemon" href="/tuzlimon/tuzlimon-press-kit.zip" download>
+          {t(lang, 'studio.press.get')} <small>ZIP · {lang === 'tr' ? '5,8' : '5.8'} MB</small>
+        </a>
+      </div>
+      <div class="end__contact">
+        <h2 class="big">{t(lang, 'studio.contact')}</h2>
+        <EmailLink lang={lang} />
+        <ul class="end__links">
+          {steam && <li><a href={steam}>Steam</a></li>}
+          <li><a href="https://www.instagram.com/tuz.limon/">Instagram</a></li>
+          <li><a href="https://www.youtube.com/@Tuz_limon">YouTube</a></li>
+          {itch && <li><a href="https://rare-d.itch.io/">itch.io</a></li>}
+          <li><a class="end__home" href={pathFor('home', lang)}>{t(lang, 'studio.site')}</a></li>
+        </ul>
+      </div>
+    </div>
+  </footer>
+</Base>
+
+<script>
+  // Salt falls behind the mascot, lands on the real letter shapes of the wordmark (the U's cup, the
+  // L's foot, through the gaps to the bottom edge), lies there for a few seconds and fades. Nothing
+  // accumulates. Moving the pointer pours a little more.
+  type Grain = { x: number; y: number; v: number; s: number; a: number; spin: number; c: string };
+  const hero = document.querySelector<HTMLElement>('[data-salt]');
+  const canvas = hero?.querySelector('canvas');
+  const name = hero?.querySelector<HTMLImageElement>('.hero__name img');
+  const ctx = canvas?.getContext('2d');
+  if (hero && canvas && name && ctx) {
+    await name.decode().catch(() => {});
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const CELL = 4;
+    const grains: Grain[] = [];
+    const landed: (Grain & { age: number; life: number })[] = [];
+    let w = 0;
+    let h = 0;
+    let floor = new Float32Array(0); // per column: y of the first letter pixel, or the hero's bottom
+    let budget = 0;
+
+    const tone = () => (Math.random() < 0.16 ? '#b2bec9' : '#fbf9f4');
+    const drawGrain = (c: CanvasRenderingContext2D, x: number, y: number, s: number, a: number, col: string) => {
+      c.save();
+      c.translate(x, y);
+      c.rotate(a);
+      c.fillStyle = col;
+      c.beginPath();
+      c.roundRect(-s / 2, -s / 2, s, s, s * 0.28);
+      c.fill();
+      c.restore();
+    };
+    const surface = (x: number) => floor[Math.max(0, Math.min(floor.length - 1, Math.round(x / CELL)))];
+    // Reads where the letters begin in each column from the wordmark itself.
+    const readLetters = (top: number, left: number, width: number, height: number) => {
+      floor = new Float32Array(Math.ceil(w / CELL) + 1).fill(h);
+      const probe = document.createElement('canvas');
+      probe.width = Math.max(1, Math.round(width));
+      probe.height = Math.max(1, Math.round(height));
+      const p = probe.getContext('2d', { willReadFrequently: true })!;
+      p.drawImage(name, 0, 0, probe.width, probe.height);
+      const { data } = p.getImageData(0, 0, probe.width, probe.height);
+      for (let i = 0; i < floor.length; i++) {
+        const x = Math.round(i * CELL - left);
+        if (x < 0 || x >= probe.width) continue;
+        for (let y = 0; y < probe.height; y++) {
+          if (data[(y * probe.width + x) * 4 + 3] > 128) {
+            floor[i] = top + y;
+            break;
+          }
+        }
+      }
+    };
+    const size = () => {
+      const r = hero.getBoundingClientRect();
+      if (Math.round(r.width) === w) return;
+      w = Math.round(r.width);
+      h = Math.round(r.height);
+      const dpr = Math.min(devicePixelRatio || 1, 2);
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      canvas.style.width = `${w}px`;
+      canvas.style.height = `${h}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const n = name.getBoundingClientRect();
+      readLetters(n.top - r.top, n.left - r.left, n.width, n.height);
+      grains.length = 0;
+      landed.length = 0;
+    };
+    const spawn = (x: number, y: number) => {
+      if (grains.length < 320)
+        grains.push({
+          x,
+          y,
+          v: 70 + Math.random() * 60,
+          s: 4 + Math.random() * 5,
+          a: Math.random() * 3,
+          spin: (Math.random() - 0.5) * 3,
+          c: tone(),
+        });
+    };
+    const frame = (dt: number) => {
+      ctx.clearRect(0, 0, w, h);
+      for (let i = landed.length - 1; i >= 0; i--) {
+        const d = landed[i];
+        d.age += dt;
+        if (d.age >= d.life) {
+          landed.splice(i, 1);
+          continue;
+        }
+        ctx.globalAlpha = Math.min(1, ((d.life - d.age) / d.life) * 2);
+        drawGrain(ctx, d.x, d.y, d.s, d.a, d.c);
+      }
+      ctx.globalAlpha = 1;
+      for (let i = grains.length - 1; i >= 0; i--) {
+        const g = grains[i];
+        g.v = Math.min(g.v + 420 * dt, 340);
+        g.y += g.v * dt;
+        g.a += g.spin * dt;
+        const ground = surface(g.x);
+        if (g.y >= ground) {
+          grains.splice(i, 1);
+          if (landed.length < 240)
+            landed.push({ ...g, y: ground - g.s * 0.3, age: 0, life: 2.5 + Math.random() * 3 });
+        } else drawGrain(ctx, g.x, g.y, g.s, g.a, g.c);
+      }
+    };
+
+    size();
+    if (still) {
+      // one still frame: grains caught in mid-air
+      for (let i = 0, n = Math.round(w / 40); i < n; i++) spawn(Math.random() * w, Math.random() * surface(0) * 0.9);
+      frame(0);
+    }
+    else {
+      let last = 0;
+      let raf = 0;
+      let visible = true;
+      const loop = (now: number) => {
+        const dt = Math.min((now - last) / 1000 || 0, 0.05);
+        last = now;
+        budget += dt * (w / 130);
+        while (budget >= 1) {
+          budget -= 1;
+          spawn(Math.random() * w, -10);
+        }
+        frame(dt);
+        raf = visible && !document.hidden ? requestAnimationFrame(loop) : 0;
+      };
+      const wake = () => {
+        if (!raf && visible && !document.hidden) {
+          last = 0;
+          raf = requestAnimationFrame(loop);
+        }
+      };
+      new IntersectionObserver((e) => {
+        visible = e[0].isIntersecting;
+        wake();
+      }).observe(hero);
+      document.addEventListener('visibilitychange', wake);
+      addEventListener('resize', size);
+      let px = 0;
+      let py = 0;
+      hero.addEventListener('pointermove', (e) => {
+        const r = hero.getBoundingClientRect();
+        const x = e.clientX - r.left;
+        const y = e.clientY - r.top;
+        if (Math.hypot(x - px, y - py) < 22 || y > surface(x)) return;
+        px = x;
+        py = y;
+        spawn(x, y);
+      });
+      wake();
+    }
+  }
+
+  // Leeway clips play only while on screen; with reduced motion they wait for the user.
+  const clips = document.querySelectorAll<HTMLVideoElement>('video[data-clip]');
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) clips.forEach((v) => (v.controls = true));
+  else {
+    const io = new IntersectionObserver(
+      (es) => es.forEach((e) => (e.isIntersecting ? (e.target as HTMLVideoElement).play().catch(() => {}) : (e.target as HTMLVideoElement).pause())),
+      { threshold: 0.35 },
+    );
+    clips.forEach((v) => io.observe(v));
+  }
+</script>
+
+<style>
+  :global(html[data-zone='studio']) {
+    scroll-padding-top: 1.5rem;
+  }
+  .wrap {
+    width: min(100% - 2 * var(--pad), 82rem);
+    margin-inline: auto;
+  }
+  main,
+  .hero,
+  .wrap {
+    --pad: clamp(1rem, 3vw, 2.5rem);
+  }
+  .big {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(2.2rem, 6vw, 4.5rem);
+    font-weight: 800;
+    font-stretch: 85%;
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+  }
+
+  /* ---------- hero: lemon, wordmark as the floor ---------- */
+  .hero {
+    /* the wordmark SVG carries 16.6% empty space above and below its letters and 3.3% at the sides */
+    --wm-h: calc(min(100vw, 165svh) * 0.2058);
+    --mascot: min(86vw, 62svh);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: 0.9rem var(--pad) 0;
+    background: var(--lemon);
+    color: var(--night);
+  }
+  .hero__salt {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .bar {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: clamp(0.9rem, 2.4vw, 2rem);
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    font-weight: 700;
+  }
+  .bar a {
+    color: inherit;
+    text-decoration: none;
+    text-underline-offset: 0.25em;
+    text-decoration-thickness: 3px;
+  }
+  .bar a:hover {
+    text-decoration-line: underline;
+  }
+  .bar__lang {
+    padding: 0.1rem 0.6rem;
+    border: 2.5px solid var(--night);
+    border-radius: 999px;
+    font-size: 0.85rem;
+  }
+  .hero :focus-visible,
+  .earlier :focus-visible,
+  .collab :focus-visible {
+    outline: 3px solid var(--night);
+    outline-offset: 3px;
+  }
+  .hero__stage {
+    position: relative;
+    z-index: 2;
+    flex: 1;
+    display: grid;
+    justify-items: center;
+    align-content: end;
+    gap: 0.75rem;
+    padding-top: 1rem;
+  }
+  .hero__tag {
+    order: -1;
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 7vw, 3.1rem);
+    font-weight: 800;
+    font-stretch: 85%;
+    line-height: 0.98;
+    letter-spacing: -0.03em;
+    text-align: center;
+  }
+  .hero__tag span {
+    display: block;
+  }
+  .hero__tag2 {
+    order: -1;
+    margin: 0;
+    font-size: clamp(1.05rem, 2vw, 1.5rem);
+    font-weight: 600;
+    line-height: 1.25;
+    text-align: center;
+  }
+  .hero__mascot {
+    display: block;
+    width: auto;
+    height: var(--mascot);
+    /* the lemon's tip (10% above the box bottom) stands on the letters */
+    margin-bottom: calc(var(--mascot) * -0.1 - var(--wm-h) * 0.15);
+  }
+  .hero__name {
+    position: relative;
+    z-index: 1;
+    align-self: center;
+    margin: 0;
+    width: min(100% + 2 * var(--pad), 165svh);
+    flex: none;
+  }
+  .hero__name img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  @media (min-width: 900px) {
+    .hero__stage {
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      align-items: center;
+      gap: 2rem;
+    }
+    .hero__tag {
+      order: 0;
+      justify-self: start;
+      text-align: left;
+    }
+    .hero {
+      --mascot: clamp(16rem, calc(100svh - var(--wm-h) * 0.85 - 3.5rem), 70vw);
+      min-height: 100svh;
+    }
+    .hero__mascot {
+      align-self: end;
+    }
+    .hero__tag2 {
+      order: 0;
+      justify-self: end;
+      max-width: 11em;
+      text-align: right;
+    }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .hero__mascot {
+      animation: tl-bob 5s ease-in-out infinite;
+    }
+  }
+  @keyframes tl-bob {
+    50% {
+      transform: translateY(-7px);
+    }
+  }
+
+  /* ---------- the game in development ---------- */
+  .lead {
+    padding-block: clamp(3.5rem, 9vw, 7rem);
+    background: var(--night);
+    color: var(--cream);
+  }
+  .lead__grid {
+    display: grid;
+    gap: 2.25rem;
+    align-items: center;
+  }
+  @media (min-width: 960px) {
+    .lead__grid {
+      grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+      gap: 3.5rem;
+    }
+  }
+  .stamp {
+    display: inline-block;
+    margin: 0 0 1rem;
+    padding: 0.25rem 0.75rem;
+    background: var(--lemon);
+    border-radius: 6px;
+    color: var(--night);
+    font-family: var(--font-display);
+    font-weight: 800;
+    transform: rotate(-2deg);
+  }
+  .lead h2 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(2.6rem, 6.4vw, 5.2rem);
+    font-weight: 800;
+    font-stretch: 85%;
+    line-height: 0.92;
+    letter-spacing: -0.035em;
+  }
+  .lead__with {
+    margin: 0.9rem 0 0;
+    color: var(--lemon);
+    font-weight: 600;
+  }
+  .lead__sum {
+    margin: 1rem 0 1.75rem;
+    color: var(--cream);
+    font-size: 1.08rem;
+    line-height: 1.55;
+  }
+  .lead__cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+  }
+  .lead__clip {
+    display: block;
+    margin: 0;
+    border: 3px solid var(--cream);
+    border-radius: 16px;
+    box-shadow: 10px 10px 0 var(--lemon);
+    overflow: hidden;
+    background: #000;
+  }
+  .lead__clip video {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .lead__media {
+    margin-top: clamp(2.5rem, 6vw, 4.5rem);
+  }
+  .lead__media h3 {
+    margin: 2.25rem 0 1rem;
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 3vw, 2.2rem);
+    font-weight: 800;
+    font-stretch: 85%;
+    letter-spacing: -0.025em;
+  }
+  .clips,
+  .shots {
+    display: grid;
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .clips figure {
+    margin: 0;
+  }
+  .clips video {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    background: #000;
+  }
+  .clips figcaption {
+    margin-top: 0.45rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+  .shots {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.7rem;
+  }
+  .shots a {
+    display: block;
+    aspect-ratio: 16 / 9;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: #000;
+    transition: border-color 160ms;
+  }
+  .shots a:hover {
+    border-color: var(--lemon);
+  }
+  @media (min-width: 760px) {
+    .clips {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1.25rem;
+    }
+    .shots {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+  .btn {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    padding: 0.75rem 1.2rem;
+    border-radius: 10px;
+    font-family: var(--font-display);
+    font-size: 1.08rem;
+    font-weight: 800;
+    text-decoration: none;
+    transition:
+      transform 160ms var(--ease),
+      box-shadow 160ms var(--ease);
+  }
+  .btn small {
+    font-family: var(--font);
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+  .btn--lemon {
+    background: var(--lemon);
+    color: var(--night);
+  }
+  .btn--lemon:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 4px 4px 0 var(--cream);
+  }
+  .btn--line {
+    border: 2.5px solid var(--cream);
+    color: var(--cream);
+  }
+  .btn--line:hover {
+    background: var(--cream);
+    color: var(--night);
+  }
+
+  /* ---------- earlier games: stickers on cream ---------- */
+  .earlier {
+    padding-block: clamp(3.5rem, 8vw, 6rem);
+    background: var(--cream);
+    color: var(--night);
+  }
+  .cards {
+    display: grid;
+    gap: 1.6rem;
+    margin: 2rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  @media (min-width: 760px) {
+    .cards {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  .card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 0.7rem 0.7rem 1rem;
+    background: #fffdf7;
+    border: 3px solid var(--night);
+    border-radius: 16px;
+    box-shadow: 7px 7px 0 var(--hit);
+    color: var(--night);
+    text-decoration: none;
+    transition:
+      transform 180ms var(--ease),
+      box-shadow 180ms var(--ease);
+  }
+  .card:hover {
+    transform: translate(-4px, -4px);
+    box-shadow: 12px 12px 0 var(--hit);
+  }
+  .card__art {
+    display: block;
+    aspect-ratio: 16 / 10;
+    margin-bottom: 0.85rem;
+    border-radius: 9px;
+    overflow: hidden;
+    background: var(--night);
+  }
+  .card__title {
+    padding-inline: 0.25rem;
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    font-weight: 800;
+    font-stretch: 85%;
+    line-height: 1;
+    letter-spacing: -0.025em;
+  }
+  .card__meta {
+    margin-top: 0.3rem;
+    padding-inline: 0.25rem;
+    color: #454c5a;
+    font-size: 0.92rem;
+  }
+  .card__award {
+    align-self: flex-start;
+    margin: 0.7rem 0.25rem 0;
+    padding: 0.1rem 0.55rem;
+    background: var(--lemon);
+    border-radius: 5px;
+    font-size: 0.88rem;
+    font-weight: 700;
+  }
+
+  /* ---------- work with us ---------- */
+  .collab {
+    padding-block: clamp(3.5rem, 8vw, 6rem);
+    background: var(--lemon);
+    color: var(--night);
+  }
+  .collab__grid {
+    display: grid;
+    gap: 2.5rem;
+  }
+  @media (min-width: 960px) {
+    .collab__grid {
+      grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+      gap: 4rem;
+      align-items: start;
+    }
+    .collab__head {
+      position: sticky;
+      top: 2rem;
+    }
+  }
+  .collab__head p {
+    margin: 1.1rem 0 1.6rem;
+    max-width: 26rem;
+    font-size: 1.15rem;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+  .collab__mail {
+    display: inline-flex;
+    max-width: 100%;
+    padding: 0.7rem 1.1rem;
+    background: var(--night);
+    border-radius: 10px;
+    color: var(--lemon);
+    font-family: var(--font-display);
+    font-weight: 700;
+    transition: transform 160ms var(--ease);
+  }
+  .collab__mail:hover {
+    transform: translate(-2px, -2px);
+  }
+  .collab__mail :global(.email__link) {
+    color: var(--lemon);
+    overflow-wrap: anywhere;
+    text-decoration: none;
+  }
+  .collab__social {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0.8rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .collab__social a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0.75rem 0.25rem 0.55rem;
+    border: 2.5px solid var(--night);
+    border-radius: 999px;
+    color: var(--night);
+    font-size: 0.92rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition:
+      background 160ms,
+      color 160ms;
+  }
+  .collab__social a:hover {
+    background: var(--night);
+    color: var(--lemon);
+  }
+  .collab__social svg {
+    width: 1.05em;
+    height: 1.05em;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+  }
+  .collab__social .dot {
+    fill: currentColor;
+    stroke: none;
+  }
+  .offers {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-top: 3px solid var(--night);
+  }
+  .offers li {
+    padding-block: 1.5rem;
+    border-bottom: 3px solid var(--night);
+  }
+  .offers h3 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(1.7rem, 3.4vw, 2.6rem);
+    font-weight: 800;
+    font-stretch: 85%;
+    line-height: 1.02;
+    letter-spacing: -0.03em;
+  }
+  .offers p {
+    margin: 0.6rem 0 0;
+    max-width: 42rem;
+    font-size: 1.05rem;
+    font-weight: 500;
+    line-height: 1.5;
+  }
+  .offers__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.9rem;
+  }
+  .offers__links a {
+    padding: 0.2rem 0.7rem;
+    border: 2.5px solid var(--night);
+    border-radius: 999px;
+    color: var(--night);
+    font-size: 0.92rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition:
+      background 160ms,
+      color 160ms;
+  }
+  .offers__links a:hover {
+    background: var(--night);
+    color: var(--lemon);
+  }
+
+  /* ---------- press + contact ---------- */
+  .end {
+    padding-block: clamp(3.5rem, 8vw, 6rem) 3rem;
+    background: var(--night);
+    color: var(--cream);
+  }
+  .end__grid {
+    display: grid;
+    gap: 2.75rem;
+  }
+  @media (min-width: 900px) {
+    .end__grid {
+      grid-template-columns: minmax(0, 15rem) minmax(0, 1fr) minmax(0, 1fr);
+      gap: 4rem;
+      align-items: start;
+    }
+  }
+  .end__logo {
+    display: block;
+    width: min(100%, 13rem);
+    height: auto;
+  }
+  .end__body {
+    margin: 1rem 0 1.4rem;
+    color: var(--muted);
+  }
+  .end__contact :global(.email) {
+    display: inline-flex;
+    margin-top: 1rem;
+  }
+  .end__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.25rem;
+    margin: 1rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .end__links a {
+    color: var(--cream);
+  }
+  .end__links a.end__home {
+    color: var(--blue);
+  }
+</style>

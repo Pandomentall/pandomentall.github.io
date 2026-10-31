@@ -83,7 +83,7 @@ const folders: Folder[] = [
       {
         folders.map((f, i) => (
           <li class="slot" style={`--c1:${f.c1};--c2:${f.c2};--depth:${[70, 130, 100, 160][i]}px`}>
-            <a class="folder" href={pathFor(f.key, lang)}>
+            <a class="folder" href={pathFor(f.key === 'games' ? 'tuzlimon' : f.key, lang)}>
               <span class="folder__back">
                 <span class="folder__tab">{f.title}</span>
               </span>

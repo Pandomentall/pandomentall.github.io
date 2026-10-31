@@ -82,7 +82,7 @@ const accent = game ? `--a1:${game.data.accent[0]};--a2:${game.data.accent[1]}` 
   description={d.summary}
 >
   <article class:list={['container', 'detail', isGame ? 'detail--game' : 'detail--tech']} style={accent}>
-    <a class="back" href={pathFor(route, lang)}>
+    <a class="back" href={pathFor(isGame ? 'tuzlimon' : route, lang)}>
       <ArrowLeft class="icon" aria-hidden="true" />
       {t(lang, isGame ? 'detail.back.games' : 'detail.back.projects')}
     </a>

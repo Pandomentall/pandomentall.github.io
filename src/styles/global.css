@@ -53,6 +53,22 @@
   --content: 52rem;
 }
 
+/* Tuz Limon's own shop front (/tuzlimon): the press-kit palette, deliberately unlike the rest.
+   --blue only marks the link back to Ender's main site. */
+[data-zone='studio'] {
+  --bg: #141820;
+  --surface: #1d2230;
+  --surface-2: #262c3b;
+  --border: #343b4c;
+  --border-soft: #262c3b;
+  --text: #f8f1e2;
+  --muted: #b2bec9;
+  --lemon: #fde327;
+  --cream: #f8f1e2;
+  --night: #141820;
+  --font-display: 'Bricolage Grotesque Variable', var(--font);
+}
+
 *,
 *::before,
 *::after {

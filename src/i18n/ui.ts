@@ -19,6 +19,7 @@ export const routes = {
   projects: { tr: 'projeler', en: 'projects' },
   games: { tr: 'oyunlar', en: 'games' },
   blog: { tr: 'blog', en: 'blog' },
+  tuzlimon: { tr: 'tuzlimon', en: 'tuzlimon' },
 } satisfies Record<string, L>;
 export type RouteKey = keyof typeof routes;
 
@@ -84,12 +85,43 @@ export const ui = {
     en: 'Let’s team up, build it together, or I build it for you; whichever suits you.',
   },
 
-  'games.title': { tr: 'Oyunlar', en: 'Games' },
-  'games.kicker': { tr: 'Oyun atölyesi', en: 'Game workshop' },
-  'games.lead': {
-    tr: 'Jam’lerde yaptıklarım ve üzerinde çalıştığım oyun.',
-    en: 'What I made at game jams, and the game I am building now.',
+  'studio.meta': {
+    tr: 'Tuz Limon: bağımsız oyunların tekilası. Leeway: Lightkeeper 2027’nin ilk çeyreğinde, jam oyunları yayında.',
+    en: 'Tuz Limon: the tequila of indie games. Leeway: Lightkeeper in Q1 2027, jam games out now.',
   },
+  'studio.tag': { tr: 'Bağımsız oyunların tekilası.', en: 'Tequila of indie games.' },
+  'studio.tag2': { tr: 'En iyisi tuz ve limonla.', en: 'Best served with salt and lemon.' },
+  'studio.nav.games': { tr: 'Oyunlar', en: 'Games' },
+  'studio.nav.collab': { tr: 'İş birliği', en: 'Work with us' },
+  'studio.nav.press': { tr: 'Basın', en: 'Press' },
+  'studio.now': { tr: 'Yakında 2027 1. Çeyrek', en: 'Coming Q1 2027' },
+  'studio.with': { tr: 'Vormela Interactive x Tuz Limon', en: 'Vormela Interactive x Tuz Limon' },
+  'studio.wishlist': { tr: 'Steam’de istek listene ekle', en: 'Wishlist on Steam' },
+  'studio.details': { tr: 'Oyunun sayfası', en: 'Game page' },
+  'studio.earlier': { tr: 'Önceki oyunlar', en: 'Earlier games' },
+  'studio.collab': { tr: 'Birlikte çalışalım', en: 'Work with us' },
+  'studio.collab.lead': {
+    tr: 'Ekibe katılmak ya da oyunlarımızı yayınlamak için.',
+    en: 'To join the team or to publish our games.',
+  },
+  'studio.collab.team': { tr: 'Ekip Arkadaşı', en: 'Teammate' },
+  'studio.collab.team.body': {
+    tr: 'Beraber proje yapalım, projene katkıda bulunayım ya da sadece sohbet edelim. Bana yaz!',
+    en: 'Let’s build a project together, let me contribute to yours, or let’s just chat. Write to me!',
+  },
+  'studio.collab.publish': { tr: 'Yayın', en: 'Publishing' },
+  'studio.collab.publish.body': {
+    tr: 'Leeway: Lightkeeper 2027’nin ilk çeyreğine hazırlanıyor. Yayın görüşmelerine açığız.',
+    en: 'Leeway: Lightkeeper is heading for Q1 2027. We are open to publishing talks.',
+  },
+  'studio.press': { tr: 'Basın', en: 'Press' },
+  'studio.press.body': {
+    tr: 'Logolar, maskot, renkler ve kullanım kuralları tek dosyada.',
+    en: 'Logos, mascot, colours and usage rules in one file.',
+  },
+  'studio.press.get': { tr: 'Basın kitini indir', en: 'Download the press kit' },
+  'studio.contact': { tr: 'İletişim', en: 'Contact' },
+  'studio.site': { tr: 'Ender Aygün’ün sitesi', en: 'Ender Aygün’s site' },
 
   'projects.title': { tr: 'Projeler', en: 'Projects' },
   'projects.lead': {

@@ -6,6 +6,11 @@ import sitemap from '@astrojs/sitemap';
 export default defineConfig({
   site: 'https://pandomentall.github.io',
   trailingSlash: 'always',
+  // The games list became the Tuz Limon page; old links must keep working (Pages has no server redirects).
+  redirects: {
+    '/oyunlar/': '/tuzlimon/',
+    '/en/games/': '/en/tuzlimon/',
+  },
   i18n: {
     locales: ['tr', 'en'],
     defaultLocale: 'tr',

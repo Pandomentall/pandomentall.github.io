@@ -29,7 +29,7 @@ import { other, pathFor, t, type Lang, type RouteKey } from '../i18n/ui';
 import geistLatin from '@fontsource-variable/geist/files/geist-latin-wght-normal.woff2?url';
 import geistLatinExt from '@fontsource-variable/geist/files/geist-latin-ext-wght-normal.woff2?url';
 
-export type Zone = 'cv' | 'game' | 'tech';
+export type Zone = 'cv' | 'game' | 'tech' | 'studio';
 
 interface Props {
   lang: Lang;
@@ -39,26 +39,31 @@ interface Props {
   item?: string;
   zone?: Zone;
   // Game pages may bring their own world; default follows the zone.
-  backdrop?: 'constellation' | 'storm' | 'kitchen' | 'sea' | 'orbit' | 'grid' | 'workbench';
+  backdrop?: 'constellation' | 'storm' | 'kitchen' | 'sea' | 'orbit' | 'grid' | 'workbench' | 'none';
   title: string;
   description: string;
   noindex?: boolean;
+  // Stand-alone pages (Tuz Limon) bring their own header and footer, icon and social card.
+  bare?: boolean;
+  favicon?: string;
+  socialImage?: string;
 }
-const { lang, route, item, zone = 'cv', title, description, noindex = false } = Astro.props;
+const { lang, route, item, zone = 'cv', title, description, noindex = false, bare = false, favicon, socialImage } =
+  Astro.props;
 const backdrop =
-  Astro.props.backdrop ?? ({ cv: 'constellation', game: 'grid', tech: 'workbench' } as const)[zone];
+  Astro.props.backdrop ?? ({ cv: 'constellation', game: 'grid', tech: 'workbench', studio: 'none' } as const)[zone];
 
 const alt = other(lang);
 const nav: { key: RouteKey; label: string; zone: Zone }[] = [
   { key: 'cv', label: t(lang, 'nav.cv'), zone: 'cv' },
   { key: 'projects', label: t(lang, 'nav.projects'), zone: 'tech' },
-  { key: 'games', label: t(lang, 'nav.games'), zone: 'game' },
+  { key: 'tuzlimon', label: t(lang, 'nav.games'), zone: 'game' },
   { key: 'blog', label: t(lang, 'nav.blog'), zone: 'cv' },
 ];
 const abs = (path: string) => new URL(path, site.url).href;
 const canonical = route ? abs(pathFor(route, lang, item)) : undefined;
 const jsonLd = route === 'home' || route === 'cv' ? await personGraph(lang, route) : null;
-const ogImage = abs(`/og/cv-${lang}.png`);
+const ogImage = abs(socialImage ?? `/og/cv-${lang}.png`);
 ---
 
 <!doctype html>
@@ -66,7 +71,7 @@ const ogImage = abs(`/og/cv-${lang}.png`);
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content={zone === 'game' ? '#232940' : zone === 'tech' ? '#34414f' : '#2e3844'} />
+    <meta name="theme-color" content={zone === 'studio' ? '#fde327' : zone === 'game' ? '#232940' : zone === 'tech' ? '#34414f' : '#2e3844'} />
     <title>{title}</title>
     <link rel="preload" href={geistLatin} as="font" type="font/woff2" crossorigin />
     <link rel="preload" href={geistLatinExt} as="font" type="font/woff2" crossorigin />
@@ -107,9 +112,15 @@ const ogImage = abs(`/og/cv-${lang}.png`);
         </>
       )
     }
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/svg+xml" href={favicon ?? '/favicon.svg'} />
+    {
+      !favicon && (
+        <>
+          <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
+          <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        </>
+      )
+    }
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={site.name} />
     <meta property="og:title" content={title} />
@@ -132,6 +143,7 @@ const ogImage = abs(`/og/cv-${lang}.png`);
     {backdrop === 'grid' && <GameGrid />}
     {backdrop === 'workbench' && <Workbench />}
 
+    {!bare && (
     <header class="site-header">
       <div class="container container--wide site-header__inner">
         <a class="brand" href={pathFor('home', lang)}>
@@ -143,7 +155,7 @@ const ogImage = abs(`/og/cv-${lang}.png`);
               <a
                 href={pathFor(item.key, lang)}
                 data-zone-hint={item.zone}
-                aria-current={item.key === route ? 'page' : undefined}
+                aria-current={item.key === route || (item.key === 'tuzlimon' && route === 'games') ? 'page' : undefined}
               >
                 {item.label}
               </a>
@@ -166,11 +178,13 @@ const ogImage = abs(`/og/cv-${lang}.png`);
       </div>
       {zone === 'game' && <ParlavanTrail />}
     </header>
+    )}
 
     <main id="main">
       <slot />
     </main>
 
+    {!bare && (
     <footer class="site-footer">
       <div class="container container--wide site-footer__inner">
         <div class="site-footer__contact">
@@ -214,6 +228,7 @@ const ogImage = abs(`/og/cv-${lang}.png`);
         </div>
       </div>
     </footer>
+    )}
 
     <script>
       // Images still loading fade in when they are ready (global.css .img-wait/.img-fade).
